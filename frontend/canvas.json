@@ -1,0 +1,238 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AIAdjustment.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "E3 · AI Adjustment / Edit",
+      "w": 390,
+      "x": 940,
+      "y": 6272
+    },
+    "AICoach.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "E1 · AI Coach",
+      "w": 390,
+      "x": 0,
+      "y": 6272
+    },
+    "AIGeneratedWorkout.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "E2 · AI Generated Workout",
+      "w": 390,
+      "x": 470,
+      "y": 6272
+    },
+    "ActiveWorkout.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "D1 · Active Workout + Exercise Logging",
+      "w": 390,
+      "x": 0,
+      "y": 5308
+    },
+    "CreateAccount.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B2 · Create Account",
+      "w": 390,
+      "x": 470,
+      "y": 3380
+    },
+    "FitnessGoal.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B3 · Fitness Goal",
+      "w": 390,
+      "x": 940,
+      "y": 3380
+    },
+    "FitnessLevel.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B4 · Fitness Level",
+      "w": 390,
+      "x": 1410,
+      "y": 3380
+    },
+    "Home.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "C1 · Home",
+      "w": 390,
+      "x": 0,
+      "y": 4344
+    },
+    "LoginScreen.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B0 · Log In",
+      "w": 390,
+      "x": 2350,
+      "y": 3380
+    },
+    "Main.dc.html": {
+      "h": 3148,
+      "title": "A1 · Design System Foundation",
+      "w": 1314,
+      "x": -2975,
+      "y": 86
+    },
+    "Preferences.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B5 · Preferences",
+      "w": 390,
+      "x": 1880,
+      "y": 3380
+    },
+    "Profile.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "C5 · Profile",
+      "w": 390,
+      "x": 1880,
+      "y": 4344
+    },
+    "Progress.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "C4 · Progress",
+      "w": 390,
+      "x": 1410,
+      "y": 4344
+    },
+    "RestTimer.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "D2 · Rest Timer (state)",
+      "w": 390,
+      "x": 470,
+      "y": 5308
+    },
+    "States.dc.html": {
+      "h": 1216,
+      "title": "A2 · Supporting States",
+      "w": 960,
+      "x": -1310,
+      "y": 658
+    },
+    "Welcome.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "B1 · Welcome",
+      "w": 390,
+      "x": 0,
+      "y": 3380
+    },
+    "WorkoutComplete.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "D3 · Workout Complete",
+      "w": 390,
+      "x": 940,
+      "y": 5308
+    },
+    "WorkoutDetails.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "C3 · Workout Details",
+      "w": 390,
+      "x": 940,
+      "y": 4344
+    },
+    "WorkoutDiscovery.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "C2 · Workouts",
+      "w": 390,
+      "x": 470,
+      "y": 4344
+    },
+    "WorkoutSummary.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "D4 · Workout Summary",
+      "w": 390,
+      "x": 1410,
+      "y": 5308
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-22T00:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "group-a": {
+      "kind": "title1",
+      "maxW": 2240,
+      "text": "A. Design System",
+      "w": 240,
+      "x": -2838,
+      "y": -197
+    },
+    "group-b": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "B. Onboarding",
+      "w": 240,
+      "x": 1280,
+      "y": 3123
+    },
+    "group-c": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "C. Main App",
+      "w": 240,
+      "x": 0,
+      "y": 4234
+    },
+    "group-d": {
+      "kind": "title1",
+      "maxW": 1880,
+      "text": "D. Workout Execution",
+      "w": 240,
+      "x": 0,
+      "y": 5198
+    },
+    "group-e": {
+      "kind": "title1",
+      "maxW": 1410,
+      "text": "E. AI Coach",
+      "w": 240,
+      "x": 0,
+      "y": 6162
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "States.dc.html",
+    "Welcome.dc.html",
+    "LoginScreen.dc.html",
+    "CreateAccount.dc.html",
+    "FitnessGoal.dc.html",
+    "FitnessLevel.dc.html",
+    "Preferences.dc.html",
+    "Home.dc.html",
+    "WorkoutDiscovery.dc.html",
+    "WorkoutDetails.dc.html",
+    "Progress.dc.html",
+    "Profile.dc.html",
+    "ActiveWorkout.dc.html",
+    "RestTimer.dc.html",
+    "WorkoutComplete.dc.html",
+    "WorkoutSummary.dc.html",
+    "AICoach.dc.html",
+    "AIGeneratedWorkout.dc.html",
+    "AIAdjustment.dc.html"
+  ],
+  "pages": [],
+  "title": "FitAI — High-Fidelity UI"
+}

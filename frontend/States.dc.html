@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Supporting States</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+</style>
+</helmet>
+<div style="width: 960px; height: 1520px; box-sizing: border-box; background: #0B0C0E; padding: 56px; display: flex; flex-direction: column; gap: 40px;">
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C6FF4D;">FitAI Design System</div>
+    <h1 style="margin: 0; font-size: 30px; font-weight: 700; color: #F5F6F7;">Supporting States</h1>
+    <div style="font-size: 14px; color: #9BA1A8;">Reference specimens for states referenced throughout the flow — shown here in isolation for review.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;">
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Empty — Home, no workout set</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
+        <div style="width: 56px; height: 56px; border-radius: 14px; background: #1E2023; display: flex; align-items: center; justify-content: center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M4 9v6M20 9v6M7 7v10M17 7v10M2 12h3M19 12h3"/></svg>
+        </div>
+        <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">Pick a workout to get started</div>
+        <div style="height: 44px; padding: 0 20px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 14px; font-weight: 700; display: flex; align-items: center;">Browse Workouts</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Loading — Workout card skeleton</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="width: 100%; height: 100px; border-radius: 10px; background: #1E2023;"></div>
+        <div style="width: 60%; height: 14px; border-radius: 4px; background: #1E2023;"></div>
+        <div style="width: 40%; height: 12px; border-radius: 4px; background: #1E2023;"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Error — Set failed to save</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 12px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Couldn't save that set</div>
+          <div style="font-size: 12px; color: #9BA1A8;">Check your connection and try again.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Success — Toast confirmation</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 22px; height: 22px; border-radius: 50%; background: #C6FF4D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B0C0E" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Workout saved to your history</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Empty — No workout history yet</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">No workouts logged yet</div>
+        <div style="font-size: 12px; color: #9BA1A8;">Log 3 workouts to see your first trend.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Error — AI Coach unavailable</div>
+      <div style="background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">AI Coach is unavailable</div>
+            <div style="font-size: 12px; color: #9BA1A8;">Check your connection and try again.</div>
+          </div>
+        </div>
+        <div style="height: 44px; border-radius: 12px; background: transparent; border: 1.5px solid #3A3C40; color: #F5F6F7; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center;">Retry</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Confirmation — Workout exit modal (also live inside Active Workout)</div>
+    <div style="width: 340px; display: flex; flex-direction: column; gap: 16px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700; color: #F5F6F7;">Exit workout?</div>
+      <div style="font-size: 14px; color: #9BA1A8;">Your progress on this workout will not be saved.</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 50px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">Keep Training</div>
+        <div style="height: 50px; border-radius: 12px; color: #FF6B6B; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center;">Exit Workout</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":1520}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Workout Summary</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; display: flex; flex-direction: column; padding: 56px 28px 40px;">
+
+  <h1 style="margin: 0 0 6px; font-size: 26px; font-weight: 700; color: #F5F6F7;">{{workoutName}}</h1>
+  <div style="font-size: 14px; color: #9BA1A8; margin-bottom: 28px;">{{completedAt}}</div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-size: 14px; color: #9BA1A8;">Duration</div>
+      <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">{{durationLabel}}</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-size: 14px; color: #9BA1A8;">Exercises</div>
+      <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">{{exercisesCompleted}}</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-size: 14px; color: #9BA1A8;">Sets completed</div>
+      <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">{{setsCompleted}}</div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="display: flex; gap: 12px;">
+    <a href="Progress.dc.html" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 12px; background: transparent; color: #F5F6F7; font-size: 15px; font-weight: 600; border: 1.5px solid #3A3C40;">View Progress</a>
+    <a href="Home.dc.html" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 15px; font-weight: 700;">Return Home</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    if (window.FitAIAuth) window.FitAIAuth.guardPage();
+  }
+  renderVals() {
+    var record = window.FitAI ? window.FitAI.get().lastCompleted : null;
+    var when = '—';
+    if (record && record.date) {
+      var d = new Date(record.date);
+      when = 'Completed today at ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    return {
+      workoutName: record ? record.name : 'Workout',
+      completedAt: when,
+      durationLabel: record ? record.duration + ' min' : '—',
+      exercisesCompleted: record ? record.exercisesCompleted : 0,
+      setsCompleted: record ? record.setsCompleted : 0
+    };
+  }
+}
+</script>
+</body>
+</html>

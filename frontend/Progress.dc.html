@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Progress</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 76px; overflow-y: auto; padding: 56px 24px 24px; display: flex; flex-direction: column; gap: 20px;">
+
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #F5F6F7;">Progress</h1>
+
+    <sc-if value="{{showLoading}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 12px;">
+        <div style="flex-grow: 1; height: 74px; border-radius: 14px; background: #17181B; border: 1px solid #2B2D31;"></div>
+        <div style="flex-grow: 1; height: 74px; border-radius: 14px; background: #17181B; border: 1px solid #2B2D31;"></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showStats}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; gap: 12px;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; background: #17181B; border: 1px solid #2B2D31; border-radius: 14px; padding: 16px;">
+          <div style="font-size: 22px; font-weight: 700; color: #F5F6F7;">{{workoutsThisWeek}}</div>
+          <div style="font-size: 12px; color: #6B7178;">workouts this week</div>
+        </div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; background: #17181B; border: 1px solid #2B2D31; border-radius: 14px; padding: 16px;">
+          <div style="font-size: 22px; font-weight: 700; color: #C6FF4D;">{{streakLabel}}</div>
+          <div style="font-size: 12px; color: #6B7178;">current streak</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showError}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; align-items: center; gap: 10px; background: #17181B; border: 1px solid #FF6B6B; border-radius: 12px; padding: 12px 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div style="font-size: 12px; color: #9BA1A8;">Couldn't reach the progress service — showing your last saved data.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{hasHistory}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-direction: column; gap: 12px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Volume trend</div>
+          <div style="font-size: 10px; font-weight: 700; color: #6B7178; background: #1E2023; border-radius: 999px; padding: 3px 8px;">PENDING VALIDATION</div>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 8px; height: 70px;">
+          <div style="flex-grow: 1; height: 30%; background: #2B2D31; border-radius: 4px 4px 0 0;"></div>
+          <div style="flex-grow: 1; height: 45%; background: #2B2D31; border-radius: 4px 4px 0 0;"></div>
+          <div style="flex-grow: 1; height: 55%; background: #2B2D31; border-radius: 4px 4px 0 0;"></div>
+          <div style="flex-grow: 1; height: 70%; background: #C6FF4D; border-radius: 4px 4px 0 0;"></div>
+          <div style="flex-grow: 1; height: 60%; background: #C6FF4D; border-radius: 4px 4px 0 0;"></div>
+        </div>
+        <div style="font-size: 12px; color: #6B7178;">Illustrative — needs enough logged sessions to compute a real trend</div>
+      </div>
+    </sc-if>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Workout History</div>
+      <sc-if value="{{showLoading}}" hint-placeholder-val="{{false}}">
+        <div style="height: 56px; border-radius: 12px; background: #17181B; border: 1px solid #2B2D31;"></div>
+        <div style="height: 56px; border-radius: 12px; background: #17181B; border: 1px solid #2B2D31;"></div>
+      </sc-if>
+      <sc-if value="{{hasHistory}}" hint-placeholder-val="{{true}}">
+        <sc-for list="{{historyItems}}" as="h" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #17181B; border: 1px solid #2B2D31; border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">{{h.name}}</div>
+              <div style="font-size: 12px; color: #6B7178;">{{h.when}} · {{h.duration}} min</div>
+            </div>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{hasNoHistory}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px; text-align: center;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+          <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">No workouts logged yet</div>
+          <div style="font-size: 12px; color: #9BA1A8;">Log 3 workouts to see your first trend.</div>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around; background: #121316; border-top: 1px solid #2B2D31; padding: 12px 8px 16px; box-sizing: border-box;">
+    <a href="Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Home</div>
+    </a>
+    <a href="WorkoutDiscovery.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M4 9v6M20 9v6M7 7v10M17 7v10M2 12h3M19 12h3"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Workouts</div>
+    </a>
+    <a href="Progress.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6FF4D" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      <div style="font-size: 11px; font-weight: 600; color: #C6FF4D;">Progress</div>
+    </a>
+    <a href="AICoach.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">AI Coach</div>
+    </a>
+    <a href="Profile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Profile</div>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { loading: true, error: false, workoutsThisWeek: 0, streak: 0, history: [] };
+  }
+  componentDidMount() {
+    this.checkAuthAndLoad();
+  }
+  async checkAuthAndLoad() {
+    if (window.FitAIAuth) {
+      var guard = await window.FitAIAuth.guardPage();
+      if (!guard.ok) return; // already redirecting to Login
+    }
+    this.load();
+  }
+  localProgress() {
+    var progress = window.FitAI ? window.FitAI.computeProgress() : { workoutsThisWeek: 0, streak: 0, history: [] };
+    return { workoutsThisWeek: progress.workoutsThisWeek || 0, streak: progress.streak || 0, history: progress.history || [] };
+  }
+  async load() {
+    this.setState({ loading: true, error: false });
+    if (!window.FitAISessions) {
+      var lp = this.localProgress();
+      this.setState({ loading: false, error: false, workoutsThisWeek: lp.workoutsThisWeek, streak: lp.streak, history: lp.history });
+      return;
+    }
+    var progressResult = await window.FitAISessions.getProgress();
+    if (progressResult.unconfigured) {
+      var lp2 = this.localProgress();
+      this.setState({ loading: false, error: false, workoutsThisWeek: lp2.workoutsThisWeek, streak: lp2.streak, history: lp2.history });
+      return;
+    }
+    if (!progressResult.ok || !progressResult.data) {
+      var lp3 = this.localProgress();
+      this.setState({ loading: false, error: true, workoutsThisWeek: lp3.workoutsThisWeek, streak: lp3.streak, history: lp3.history });
+      return;
+    }
+    var sessionsResult = await window.FitAISessions.getSessions({ status: 'completed', limit: 6 });
+    var history = [];
+    if (sessionsResult.ok && sessionsResult.data && Array.isArray(sessionsResult.data.sessions)) {
+      history = sessionsResult.data.sessions.map((s) => ({ name: s.name, date: s.completed_at, duration: s.duration_min }));
+    } else {
+      history = this.localProgress().history;
+    }
+    this.setState({
+      loading: false,
+      error: false,
+      workoutsThisWeek: progressResult.data.workouts_this_week,
+      streak: progressResult.data.streak,
+      history: history
+    });
+  }
+  renderVals() {
+    var now = Date.now();
+    var dayMs = 24 * 60 * 60 * 1000;
+    var historyItems = (this.state.history || []).slice(0, 6).map(function (h) {
+      var diffDays = Math.floor((now - new Date(h.date).getTime()) / dayMs);
+      var when = diffDays <= 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : diffDays + ' days ago';
+      return { name: h.name, when: when, duration: h.duration };
+    });
+    return {
+      showLoading: this.state.loading,
+      showStats: !this.state.loading,
+      showError: this.state.error,
+      workoutsThisWeek: this.state.workoutsThisWeek,
+      streakLabel: this.state.streak > 0 ? this.state.streak + '-day' : '0-day',
+      hasHistory: !this.state.loading && historyItems.length > 0,
+      hasNoHistory: !this.state.loading && historyItems.length === 0,
+      historyItems
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Adjustment</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer;text-align:left}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 92px; overflow-y: auto; padding: 24px;">
+
+    <a href="AIGeneratedWorkout.dc.html" aria-label="Cancel" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </a>
+
+    <h1 style="margin: 0 0 6px; font-size: 24px; font-weight: 700; color: #F5F6F7;">Adjust your workout</h1>
+    <div style="font-size: 14px; color: #9BA1A8; margin-bottom: 24px;">Change any input and regenerate.</div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Goal</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{goalOptions}}" as="opt" hint-placeholder-count="4">
+            <button type="button" onClick="{{opt.pick}}" style="{{opt.chipStyle}}">{{opt.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Available Time</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{timeOptions}}" as="opt" hint-placeholder-count="4">
+            <button type="button" onClick="{{opt.pick}}" style="{{opt.chipStyle}}">{{opt.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Fitness Level</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{levelOptions}}" as="opt" hint-placeholder-count="3">
+            <button type="button" onClick="{{opt.pick}}" style="{{opt.chipStyle}}">{{opt.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Equipment</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{equipmentOptions}}" as="opt" hint-placeholder-count="4">
+            <button type="button" onClick="{{opt.pick}}" style="{{opt.chipStyle}}">{{opt.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #0B0C0E; border-top: 1px solid #2B2D31; padding: 16px 24px 24px; box-sizing: border-box;">
+    <sc-if value="{{canRegenerate}}" hint-placeholder-val="{{false}}">
+      <button type="button" onClick="{{regenerateFn}}" style="{{regenerateStyle}}">{{regenerateLabel}}</button>
+    </sc-if>
+    <sc-if value="{{cannotRegenerate}}" hint-placeholder-val="{{true}}">
+      <button type="button" disabled style="display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border-radius: 12px; background: #3A3C40; color: #6B7178; font-size: 16px; font-weight: 700; border: none; box-sizing: border-box;">Regenerate</button>
+    </sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var saved = window.FitAI ? window.FitAI.get().aiCoach : { goal: null, time: null, level: null, equipment: {} };
+    this.state = {
+      goal: saved.goal,
+      time: saved.time,
+      level: saved.level,
+      equipment: saved.equipment || {},
+      regenerating: false
+    };
+  }
+  componentDidMount() {
+    if (window.FitAIAuth) window.FitAIAuth.guardPage();
+  }
+  pickSingle(field, id) {
+    this.setState({ [field]: id });
+    if (window.FitAI) {
+      window.FitAI.setAICoachField(field, id);
+    }
+  }
+  toggleEquipment(id) {
+    const next = { ...this.state.equipment, [id]: !this.state.equipment[id] };
+    this.setState({ equipment: next });
+    if (window.FitAI) {
+      window.FitAI.toggleEquipment(id);
+    }
+  }
+  buildGroup(field, items, multi) {
+    return items.map((it) => {
+      const isSelected = multi ? !!this.state.equipment[it.id] : this.state[field] === it.id;
+      const pick = multi ? () => this.toggleEquipment(it.id) : () => this.pickSingle(field, it.id);
+      return {
+        id: it.id,
+        label: it.label,
+        pick,
+        chipStyle: isSelected
+          ? 'height:42px;padding:0 16px;border-radius:999px;background:#C6FF4D;color:#0B0C0E;font-size:13px;font-weight:600;border:none;'
+          : 'height:42px;padding:0 16px;border-radius:999px;background:#17181B;color:#F5F6F7;font-size:13px;font-weight:600;border:1.5px solid #2B2D31;'
+      };
+    });
+  }
+  normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || 'Built for your updated goal, time, and level.',
+      exercises: workout.exercises.map((ex) => ({ name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec })),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+  async regenerate() {
+    if (this.state.regenerating) return;
+    this.setState({ regenerating: true });
+    var inputs = { goal: this.state.goal, time: this.state.time, level: this.state.level, equipment: this.state.equipment };
+    if (window.FitAIAI) {
+      var realInput = {
+        goal: this.state.goal, duration_min: Number(this.state.time), fitness_level: this.state.level,
+        equipment: Object.keys(this.state.equipment).filter((k) => this.state.equipment[k])
+      };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = this.normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        window.location.href = 'AIGeneratedWorkout.dc.html';
+        return;
+      }
+    }
+    if (window.FitAI) {
+      var local = window.FitAI.generateWorkout(inputs, Math.floor(Math.random() * 1000));
+      window.FitAI.patch({ generatedWorkout: this.normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    window.location.href = 'AIGeneratedWorkout.dc.html';
+  }
+  renderVals() {
+    const hasEquipment = Object.values(this.state.equipment).some(Boolean);
+    const canRegenerate = !!this.state.goal && !!this.state.time && !!this.state.level && hasEquipment;
+    return {
+      canRegenerate,
+      cannotRegenerate: !canRegenerate,
+      regenerateLabel: this.state.regenerating ? 'Regenerating…' : 'Regenerate',
+      regenerateStyle: this.state.regenerating
+        ? 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#17181B;color:#9BA1A8;font-size:16px;font-weight:700;border:1px solid #2B2D31;box-sizing:border-box;'
+        : 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#C6FF4D;color:#0B0C0E;font-size:16px;font-weight:700;border:none;box-sizing:border-box;',
+      regenerateFn: () => this.regenerate(),
+      goalOptions: this.buildGroup('goal', [
+        { id: 'lose', label: 'Lose weight' }, { id: 'build', label: 'Build muscle' },
+        { id: 'endurance', label: 'Improve endurance' }, { id: 'general', label: 'General fitness' }
+      ], false),
+      timeOptions: this.buildGroup('time', [
+        { id: '15', label: '15 min' }, { id: '30', label: '30 min' },
+        { id: '45', label: '45 min' }, { id: '60', label: '60 min' }
+      ], false),
+      levelOptions: this.buildGroup('level', [
+        { id: 'beginner', label: 'Beginner' }, { id: 'intermediate', label: 'Intermediate' }, { id: 'advanced', label: 'Advanced' }
+      ], false),
+      equipmentOptions: this.buildGroup('equipment', [
+        { id: 'bodyweight', label: 'Bodyweight only' }, { id: 'dumbbells', label: 'Dumbbells' },
+        { id: 'bands', label: 'Resistance Bands' }, { id: 'gym', label: 'Full Gym' }
+      ], true)
+    };
+  }
+}
+</script>
+</body>
+</html>

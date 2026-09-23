@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Workout Discovery</title>
+<script src="./support.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 76px; overflow-y: auto; padding: 56px 24px 24px; display: flex; flex-direction: column; gap: 20px;">
+
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #F5F6F7;">Workouts</h1>
+
+    <div style="display: flex; gap: 10px; overflow-x: auto;">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+        <button type="button" onClick="{{f.pick}}" style="{{f.chipStyle}}">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{showError}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; align-items: center; gap: 10px; background: #17181B; border: 1px solid #FF6B6B; border-radius: 12px; padding: 12px 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div style="font-size: 12px; color: #9BA1A8;">Couldn't reach the workout service — showing the offline catalog.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showLoading}}" hint-placeholder-val="{{false}}">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 14px;">
+          <div style="width: 100%; height: 90px; border-radius: 10px; background: #1E2023;"></div>
+          <div style="width: 70%; height: 12px; border-radius: 4px; background: #1E2023;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 14px;">
+          <div style="width: 100%; height: 90px; border-radius: 10px; background: #1E2023;"></div>
+          <div style="width: 70%; height: 12px; border-radius: 4px; background: #1E2023;"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showCards}}" hint-placeholder-val="{{true}}">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+        <sc-for list="{{cards}}" as="w" hint-placeholder-count="4">
+          <a href="{{w.href}}" style="display: flex; flex-direction: column; gap: 10px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 14px;">
+            <div style="width: 100%; height: 90px; border-radius: 10px; background: #1E2023; border: 1px solid #2B2D31;"></div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">{{w.name}}</div>
+              <div style="font-size: 12px; color: #9BA1A8;">{{w.meta}}</div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isEmpty}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 16px; text-align: center;">
+        <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">No workouts in this category yet</div>
+        <div style="font-size: 13px; color: #9BA1A8;">Try a different filter, or check Recommended.</div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around; background: #121316; border-top: 1px solid #2B2D31; padding: 12px 8px 16px; box-sizing: border-box;">
+    <a href="Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Home</div>
+    </a>
+    <a href="WorkoutDiscovery.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6FF4D" stroke-width="1.8"><path d="M4 9v6M20 9v6M7 7v10M17 7v10M2 12h3M19 12h3"/></svg>
+      <div style="font-size: 11px; font-weight: 600; color: #C6FF4D;">Workouts</div>
+    </a>
+    <a href="Progress.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Progress</div>
+    </a>
+    <a href="AICoach.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">AI Coach</div>
+    </a>
+    <a href="Profile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+      <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Profile</div>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+/*
+ * Phase 2.2: the workout list now comes from GET /workouts (via
+ * api-client.js's FitAICatalog), with the original hardcoded 6-workout
+ * list kept as LOCAL_FALLBACK — used whenever the API is unconfigured
+ * or unreachable, so the prototype keeps working exactly as before.
+ */
+var LOCAL_FALLBACK = [
+  { id: 'upper-body-strength', name: 'Upper Body Strength', meta: '32 min · Intermediate', cat: 'strength', rec: true },
+  { id: 'full-body-hiit', name: 'Full Body HIIT', meta: '20 min · Beginner', cat: 'fullbody', rec: true },
+  { id: '5k-cardio-blast', name: '5K Cardio Blast', meta: '28 min · Intermediate', cat: 'cardio', rec: false },
+  { id: 'lower-body-power', name: 'Lower Body Power', meta: '35 min · Advanced', cat: 'strength', rec: false },
+  { id: 'morning-mobility-flow', name: 'Morning Mobility Flow', meta: '15 min · Beginner', cat: 'mobility', rec: true },
+  { id: 'full-body-circuit', name: 'Full Body Circuit', meta: '40 min · Intermediate', cat: 'fullbody', rec: false }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { active: 'recommended', cards: [], loading: true, error: false };
+  }
+  componentDidMount() {
+    this.load('recommended');
+  }
+  localCards(activeId) {
+    return (activeId === 'recommended' ? LOCAL_FALLBACK.filter((w) => w.rec) : LOCAL_FALLBACK.filter((w) => w.cat === activeId))
+      .map((w) => ({ id: w.id, name: w.name, meta: w.meta, href: 'WorkoutDetails.dc.html?id=' + encodeURIComponent(w.id) }));
+  }
+  async load(activeId) {
+    this.setState({ loading: true, error: false });
+    if (!window.FitAICatalog) {
+      this.setState({ cards: this.localCards(activeId), loading: false, error: false });
+      return;
+    }
+    var result = await window.FitAICatalog.listWorkouts(activeId);
+    if (result.unconfigured) {
+      // Expected default state for this phase (no API_BASE set yet) — not
+      // an error, just use the existing local catalog.
+      this.setState({ cards: this.localCards(activeId), loading: false, error: false });
+      return;
+    }
+    if (!result.ok || !result.data || !Array.isArray(result.data.workouts)) {
+      this.setState({ cards: this.localCards(activeId), loading: false, error: true });
+      return;
+    }
+    var cards = result.data.workouts.map((w) => ({
+      id: w.id,
+      name: w.title,
+      meta: w.duration_min + ' min · ' + w.difficulty,
+      href: 'WorkoutDetails.dc.html?id=' + encodeURIComponent(w.id)
+    }));
+    this.setState({ cards: cards, loading: false, error: false });
+  }
+  pick(id) {
+    this.setState({ active: id });
+    this.load(id);
+  }
+  renderVals() {
+    const filterDefs = [
+      { id: 'recommended', label: 'Recommended' },
+      { id: 'strength', label: 'Strength' },
+      { id: 'cardio', label: 'Cardio' },
+      { id: 'mobility', label: 'Mobility' },
+      { id: 'fullbody', label: 'Full Body' }
+    ];
+    const filters = filterDefs.map((f) => {
+      const isActive = this.state.active === f.id;
+      return {
+        id: f.id,
+        label: f.label,
+        pick: () => this.pick(f.id),
+        chipStyle: isActive
+          ? 'height:40px;padding:0 16px;border-radius:999px;background:#C6FF4D;color:#0B0C0E;font-size:13px;font-weight:600;border:none;white-space:nowrap;'
+          : 'height:40px;padding:0 16px;border-radius:999px;background:#17181B;color:#F5F6F7;font-size:13px;font-weight:600;border:1.5px solid #2B2D31;white-space:nowrap;'
+      };
+    });
+    return {
+      filters,
+      cards: this.state.cards,
+      showLoading: this.state.loading,
+      showCards: !this.state.loading,
+      showError: this.state.error,
+      isEmpty: !this.state.loading && this.state.cards.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

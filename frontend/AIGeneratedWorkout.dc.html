@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Generated Workout</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 156px; overflow-y: auto; padding: 24px;">
+
+    <a href="AICoach.dc.html" aria-label="Back" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+
+    <sc-if value="{{showEmpty}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 16px; text-align: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">No generated workout yet</div>
+        <div style="font-size: 13px; color: #9BA1A8;">Go back to AI Coach to generate one.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showContent}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #F5F6F7;">{{workout.title}}</h1>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8; background: #17181B; border: 1px solid #2B2D31; border-radius: 999px; padding: 6px 12px;">{{workout.duration}}</div>
+        <div style="font-size: 13px; font-weight: 600; color: #9BA1A8; background: #17181B; border: 1px solid #2B2D31; border-radius: 999px; padding: 6px 12px;">{{workout.difficulty}}</div>
+        <sc-if value="{{showCategory}}" hint-placeholder-val="{{false}}">
+          <div style="font-size: 13px; font-weight: 600; color: #9BA1A8; background: #17181B; border: 1px solid #2B2D31; border-radius: 999px; padding: 6px 12px;">{{workout.category}}</div>
+        </sc-if>
+      </div>
+      <div style="margin-bottom: 18px;">
+        <sc-if value="{{isRealAi}}" hint-placeholder-val="{{false}}">
+          <div style="font-size: 10px; font-weight: 700; color: #0B0C0E; background: #C6FF4D; border-radius: 999px; padding: 3px 8px; display: inline-block;">AI-GENERATED</div>
+        </sc-if>
+        <sc-if value="{{isFallback}}" hint-placeholder-val="{{false}}">
+          <div style="font-size: 10px; font-weight: 700; color: #6B7178; background: #1E2023; border-radius: 999px; padding: 3px 8px; display: inline-block;">OFFLINE BUILDER — NOT LIVE AI</div>
+        </sc-if>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; background: #1E2023; border: 1px solid #2B2D31; border-radius: 14px; padding: 16px; margin-bottom: 20px;">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #C6FF4D;">Why this workout · research validation required</div>
+        <div style="font-size: 13px; color: #9BA1A8; line-height: 19px;">{{workout.rationale}}</div>
+      </div>
+
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8; margin-bottom: 10px;">Exercises</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <sc-for list="{{workout.exerciseRows}}" as="ex" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #17181B; border: 1px solid #2B2D31; border-radius: 12px; padding: 14px 16px;">
+            <div style="font-size: 15px; font-weight: 600; color: #F5F6F7;">{{ex.name}}</div>
+            <div style="font-size: 13px; color: #9BA1A8;">{{ex.setsLabel}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showError}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; align-items: center; gap: 10px; background: #17181B; border: 1px solid #FF6B6B; border-radius: 12px; padding: 12px 14px; margin-top: 16px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+        <div style="font-size: 12px; color: #9BA1A8;">{{errorMessage}}</div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #0B0C0E; border-top: 1px solid #2B2D31; padding: 16px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; gap: 10px;">
+      <a href="AIAdjustment.dc.html" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 12px; background: transparent; color: #F5F6F7; font-size: 14px; font-weight: 600; border: 1.5px solid #3A3C40;">Edit / Adjust</a>
+      <button type="button" onClick="{{regenerateFn}}" style="{{regenerateStyle}}">{{regenerateLabel}}</button>
+    </div>
+    <button type="button" onClick="{{startFn}}" style="{{startStyle}}">{{startLabel}}</button>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { regenerating: false, starting: false, error: null };
+  }
+  componentDidMount() {
+    if (window.FitAIAuth) window.FitAIAuth.guardPage();
+  }
+  baseInputs() {
+    var state = window.FitAI ? window.FitAI.get() : { aiCoach: {} };
+    return state.aiCoach || { goal: 'general', time: '30', level: 'intermediate', equipment: {} };
+  }
+  normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || 'Built for your selected goal, time, and level.',
+      exercises: workout.exercises.map((ex) => ({ name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec })),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+  async regenerate() {
+    if (this.state.regenerating) return;
+    this.setState({ regenerating: true, error: null });
+    var inputs = this.baseInputs();
+    if (window.FitAIAI) {
+      var realInput = {
+        goal: inputs.goal, duration_min: Number(inputs.time), fitness_level: inputs.level,
+        equipment: Object.keys(inputs.equipment || {}).filter((k) => inputs.equipment[k])
+      };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = this.normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        this.setState({ regenerating: false, error: null });
+        return;
+      }
+      if (!result.unconfigured) {
+        this.setState({ error: 'AI service unavailable — regenerated with the offline builder instead.' });
+      }
+    }
+    if (window.FitAI) {
+      var local = window.FitAI.generateWorkout(inputs, Math.floor(Math.random() * 1000));
+      window.FitAI.patch({ generatedWorkout: this.normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    this.setState({ regenerating: false });
+  }
+  async start(w) {
+    if (this.state.starting || !w) return;
+    this.setState({ starting: true });
+    var local = { id: 'ai-' + Date.now(), title: w.title, duration: w.duration, difficulty: w.difficulty, exercises: w.exercises };
+    if (window.FitAI) window.FitAI.startWorkout(local);
+    if (w.aiGenerationId && window.FitAISessions) {
+      var result = await window.FitAISessions.startAiSession(w.aiGenerationId);
+      if (result.ok && result.data && result.data.session && window.FitAI) {
+        window.FitAI.setCurrentWorkoutBackendSessionId(result.data.session.id);
+      }
+      // unconfigured/offline/failed: silently continue on the local
+      // fallback already saved above — Active Workout still works fully.
+    }
+    window.location.href = 'ActiveWorkout.dc.html';
+  }
+  renderVals() {
+    var state = window.FitAI ? window.FitAI.get() : {};
+    var w = state.generatedWorkout;
+    if (!w) {
+      return { showEmpty: true, showContent: false, showError: false, workout: {}, startFn: () => {}, regenerateFn: () => {}, startStyle: '', startLabel: '', regenerateStyle: '', regenerateLabel: '' };
+    }
+    var exerciseRows = (w.exercises || []).map(function (ex) {
+      return { name: ex.name, setsLabel: ex.sets + ' × ' + ex.reps + (ex.rest_sec !== undefined && ex.rest_sec !== null ? ' · ' + ex.rest_sec + 's rest' : '') };
+    });
+    var enabledBtn = 'display:flex;align-items:center;justify-content:center;height:56px;border-radius:12px;background:#C6FF4D;color:#0B0C0E;font-size:16px;font-weight:700;border:none;box-sizing:border-box;';
+    var busyBtn = 'display:flex;align-items:center;justify-content:center;height:56px;border-radius:12px;background:#3A3C40;color:#6B7178;font-size:16px;font-weight:700;border:none;box-sizing:border-box;';
+    var regenEnabled = 'flex-grow:1;display:flex;align-items:center;justify-content:center;height:50px;border-radius:12px;background:transparent;color:#F5F6F7;font-size:14px;font-weight:600;border:1.5px solid #3A3C40;box-sizing:border-box;';
+    var regenBusy = 'flex-grow:1;display:flex;align-items:center;justify-content:center;height:50px;border-radius:12px;background:transparent;color:#6B7178;font-size:14px;font-weight:600;border:1.5px solid #2B2D31;box-sizing:border-box;';
+    return {
+      showEmpty: false,
+      showContent: true,
+      showError: !!this.state.error,
+      errorMessage: this.state.error || '',
+      workout: { title: w.title, duration: w.duration, difficulty: w.difficulty, category: w.category, rationale: w.rationale, exerciseRows },
+      showCategory: !!w.category,
+      isRealAi: !w.isLocalFallback,
+      isFallback: !!w.isLocalFallback,
+      regenerateLabel: this.state.regenerating ? 'Regenerating…' : 'Regenerate',
+      regenerateStyle: this.state.regenerating ? regenBusy : regenEnabled,
+      regenerateFn: () => this.regenerate(),
+      startLabel: this.state.starting ? 'Starting workout…' : 'Start Workout',
+      startStyle: this.state.starting ? busyBtn : enabledBtn,
+      startFn: () => this.start(w)
+    };
+  }
+}
+</script>
+</body>
+</html>

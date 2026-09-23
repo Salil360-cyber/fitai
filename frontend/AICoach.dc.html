@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Coach</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer;text-align:left}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+    <sc-if value="{{showStepBack}}" hint-placeholder-val="{{false}}">
+      <button type="button" onClick="{{backFn}}" aria-label="Back a step" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </sc-if>
+    <a href="Home.dc.html" aria-label="Close" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </a>
+    <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #C6FF4D;">AI Coach</div>
+  </div>
+
+  <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: {{dot0}};"></div>
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: {{dot1}};"></div>
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: {{dot2}};"></div>
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: {{dot3}};"></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px;">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #F5F6F7;">{{stepTitle}}</h1>
+    <div style="font-size: 14px; color: #9BA1A8;">{{stepSubtitle}}</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
+    <sc-if value="{{showChips}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <sc-for list="{{options}}" as="opt" hint-placeholder-count="4">
+          <button type="button" onClick="{{opt.pick}}" style="{{opt.chipStyle}}">{{opt.label}}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{showCards}}" hint-placeholder-val="{{true}}">
+      <sc-for list="{{options}}" as="opt" hint-placeholder-count="4">
+        <button type="button" onClick="{{opt.pick}}" style="{{opt.cardStyle}}">
+          <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">{{opt.label}}</div>
+        </button>
+      </sc-for>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{isGenerating}}" hint-placeholder-val="{{false}}">
+    <div style="display: flex; flex-direction: column; gap: 16px; align-items: center; padding: 20px 0;">
+      <sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; align-items: center; gap: 10px; height: 56px; border-radius: 12px; background: #17181B; border: 1px solid #2B2D31; padding: 0 24px; width: 100%; box-sizing: border-box; justify-content: center;">
+          <span style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid #C6FF4D; border-top-color: transparent; display: inline-block;"></span>
+          <span style="font-size: 15px; font-weight: 600; color: #F5F6F7;">Generating your workout…</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{isReady}}" hint-placeholder-val="{{false}}">
+        <sc-if value="{{showFallbackNote}}" hint-placeholder-val="{{false}}">
+          <div style="font-size: 12px; color: #9BA1A8; text-align: center;">{{fallbackNoteText}}</div>
+        </sc-if>
+        <a href="AIGeneratedWorkout.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; width: 100%; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 16px; font-weight: 700; box-sizing: border-box;">View Your Workout</a>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{isNotGenerating}}" hint-placeholder-val="{{true}}">
+    <button type="button" onClick="{{nextFn}}" disabled="{{nextDisabled}}" style="{{nextStyle}}">{{nextLabel}}</button>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var saved = window.FitAI ? window.FitAI.get().aiCoach : { goal: null, time: null, level: null, equipment: {} };
+    this.state = {
+      step: 0,
+      goal: saved.goal || null,
+      time: saved.time || null,
+      level: saved.level || null,
+      equipment: saved.equipment || {},
+      generating: false,
+      loading: false,
+      usedFallback: false,
+      hadError: false
+    };
+  }
+  componentDidMount() {
+    if (window.FitAIAuth) window.FitAIAuth.guardPage();
+  }
+  pickSingle(field, id) {
+    this.setState({ [field]: id });
+    if (window.FitAI) {
+      window.FitAI.setAICoachField(field, id);
+    }
+  }
+  toggleEquipment(id) {
+    const next = { ...this.state.equipment, [id]: !this.state.equipment[id] };
+    this.setState({ equipment: next });
+    if (window.FitAI) {
+      window.FitAI.toggleEquipment(id);
+    }
+  }
+  stepDefs() {
+    return [
+      {
+        title: "What's your goal for this workout?",
+        subtitle: 'We\u2019ll tailor exercises to match.',
+        cards: true,
+        field: 'goal',
+        items: [
+          { id: 'lose', label: 'Lose weight' },
+          { id: 'build', label: 'Build muscle' },
+          { id: 'endurance', label: 'Improve endurance' },
+          { id: 'general', label: 'General fitness' }
+        ]
+      },
+      {
+        title: 'How much time do you have?',
+        subtitle: 'Pick what fits your schedule today.',
+        cards: false,
+        field: 'time',
+        items: [
+          { id: '15', label: '15 min' },
+          { id: '30', label: '30 min' },
+          { id: '45', label: '45 min' },
+          { id: '60', label: '60 min' }
+        ]
+      },
+      {
+        title: "What's your fitness level?",
+        subtitle: 'This sets the intensity and pacing.',
+        cards: true,
+        field: 'level',
+        items: [
+          { id: 'beginner', label: 'Beginner' },
+          { id: 'intermediate', label: 'Intermediate' },
+          { id: 'advanced', label: 'Advanced' }
+        ]
+      },
+      {
+        title: 'What equipment do you have?',
+        subtitle: 'Select all that apply.',
+        cards: false,
+        field: 'equipment',
+        multi: true,
+        items: [
+          { id: 'bodyweight', label: 'Bodyweight only' },
+          { id: 'dumbbells', label: 'Dumbbells' },
+          { id: 'bands', label: 'Resistance Bands' },
+          { id: 'gym', label: 'Full Gym' }
+        ]
+      }
+    ];
+  }
+  currentStepValid() {
+    const steps = this.stepDefs();
+    const current = steps[this.state.step];
+    return current.multi
+      ? Object.values(this.state.equipment).some(Boolean)
+      : !!this.state[current.field];
+  }
+  next() {
+    if (!this.currentStepValid()) {
+      return;
+    }
+    if (this.state.step < 3) {
+      this.setState({ step: this.state.step + 1 });
+    } else {
+      this.generate();
+    }
+  }
+  currentInputs() {
+    return { goal: this.state.goal, time: this.state.time, level: this.state.level, equipment: this.state.equipment };
+  }
+  normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || ('Built for your ' + this.state.time + '-minute ' + this.state.goal + ' goal at ' + this.state.level + ' level.'),
+      exercises: workout.exercises.map((ex) => ({ name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec })),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+  async generate() {
+    this.setState({ generating: true, loading: true, usedFallback: false, hadError: false });
+    var inputs = this.currentInputs();
+
+    if (window.FitAIAI) {
+      var realInput = {
+        goal: this.state.goal,
+        duration_min: Number(this.state.time),
+        fitness_level: this.state.level,
+        equipment: Object.keys(this.state.equipment).filter((k) => this.state.equipment[k])
+      };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = this.normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        this.setState({ loading: false, usedFallback: false, hadError: false });
+        return;
+      }
+      // Real backend/provider failure (not just "no API configured") — fall
+      // back to the local deterministic builder, but say so plainly rather
+      // than presenting it as live AI output.
+      if (!result.unconfigured) {
+        this.setState({ hadError: true });
+      }
+    }
+
+    var local = window.FitAI ? window.FitAI.generateWorkout(inputs, 0) : null;
+    if (local && window.FitAI) {
+      window.FitAI.patch({ generatedWorkout: this.normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    this.setState({ loading: false, usedFallback: true });
+  }
+  back() {
+    if (this.state.step > 0) {
+      this.setState({ step: this.state.step - 1 });
+    }
+  }
+  renderVals() {
+    const steps = this.stepDefs();
+    const current = steps[this.state.step];
+    const selectedValue = current.multi ? this.state.equipment : this.state[current.field];
+    const options = current.items.map((it) => {
+      const isSelected = current.multi ? !!selectedValue[it.id] : selectedValue === it.id;
+      const pick = current.multi
+        ? () => this.toggleEquipment(it.id)
+        : () => this.pickSingle(current.field, it.id);
+      return {
+        id: it.id,
+        label: it.label,
+        pick,
+        chipStyle: isSelected
+          ? 'height:44px;padding:0 18px;border-radius:999px;background:#C6FF4D;color:#0B0C0E;font-size:14px;font-weight:600;border:none;'
+          : 'height:44px;padding:0 18px;border-radius:999px;background:#17181B;color:#F5F6F7;font-size:14px;font-weight:600;border:1.5px solid #2B2D31;',
+        cardStyle: isSelected
+          ? 'width:100%;box-sizing:border-box;display:block;padding:18px;border-radius:14px;background:#1E2023;border:1.5px solid #C6FF4D;'
+          : 'width:100%;box-sizing:border-box;display:block;padding:18px;border-radius:14px;background:#17181B;border:1.5px solid #2B2D31;'
+      };
+    });
+    const hasSelection = current.multi
+      ? Object.values(this.state.equipment).some(Boolean)
+      : !!this.state[current.field];
+    const nextStyle = hasSelection
+      ? 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#C6FF4D;color:#0B0C0E;font-size:16px;font-weight:700;border:none;box-sizing:border-box;'
+      : 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#3A3C40;color:#6B7178;font-size:16px;font-weight:700;border:none;box-sizing:border-box;';
+    const dotColor = (i) => (i <= this.state.step ? '#C6FF4D' : '#2B2D31');
+    return {
+      stepTitle: current.title,
+      stepSubtitle: current.subtitle,
+      showChips: !current.cards,
+      showCards: current.cards,
+      options,
+      dot0: dotColor(0), dot1: dotColor(1), dot2: dotColor(2), dot3: dotColor(3),
+      isGenerating: this.state.generating,
+      isNotGenerating: !this.state.generating,
+      isLoading: this.state.loading,
+      isReady: this.state.generating && !this.state.loading,
+      showFallbackNote: this.state.usedFallback,
+      fallbackNoteText: this.state.hadError
+        ? 'AI service unavailable right now — using the offline workout builder instead.'
+        : 'Using the offline workout builder (no AI service configured).',
+      nextLabel: this.state.step < 3 ? 'Next' : 'Generate Workout',
+      nextStyle,
+      nextDisabled: !hasSelection,
+      nextFn: () => this.next(),
+      showStepBack: this.state.step > 0,
+      backFn: () => this.back()
+    };
+  }
+}
+</script>
+</body>
+</html>

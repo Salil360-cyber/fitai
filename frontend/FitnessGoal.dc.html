@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Fitness Goal</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer;text-align:left}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <a href="CreateAccount.dc.html" aria-label="Back" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+  </a>
+
+  <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #C6FF4D;"></div>
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #2B2D31;"></div>
+    <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #2B2D31;"></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px;">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #F5F6F7;">What's your main goal?</h1>
+    <div style="font-size: 15px; color: #9BA1A8;">We'll use this to shape your workouts.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
+    <sc-for list="{{options}}" as="opt" hint-placeholder-count="4">
+      <button type="button" onClick="{{opt.pick}}" style="{{opt.cardStyle}}">
+        <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">{{opt.label}}</div>
+        <div style="font-size: 13px; color: #9BA1A8; margin-top: 2px;">{{opt.desc}}</div>
+      </button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{hasSelection}}" hint-placeholder-val="{{false}}">
+    <a href="FitnessLevel.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 16px; font-weight: 700; margin-top: 20px;">Continue</a>
+  </sc-if>
+  <sc-if value="{{noSelection}}" hint-placeholder-val="{{true}}">
+    <button type="button" disabled style="display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border-radius: 12px; background: #3A3C40; color: #6B7178; font-size: 16px; font-weight: 700; border: none; margin-top: 20px; box-sizing: border-box;">Continue</button>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var goals = [
+      { id: 'lose', label: 'Lose weight' },
+      { id: 'build', label: 'Build muscle' },
+      { id: 'endurance', label: 'Improve endurance' },
+      { id: 'general', label: 'General fitness' }
+    ];
+    var savedLabel = window.FitAI ? window.FitAI.get().profile.fitnessGoal : null;
+    var savedGoal = goals.find((g) => g.label === savedLabel);
+    this.state = { selected: savedGoal ? savedGoal.id : null };
+  }
+  pick(id, label) {
+    this.setState({ selected: id });
+    if (window.FitAI) {
+      window.FitAI.setProfileField('fitnessGoal', label);
+    }
+    if (window.FitAIProfile) {
+      window.FitAIProfile.updateProfile({ fitness_goal: label });
+    }
+  }
+  renderVals() {
+    const base = [
+      { id: 'lose', label: 'Lose weight', desc: 'Burn fat and get leaner' },
+      { id: 'build', label: 'Build muscle', desc: 'Gain strength and size' },
+      { id: 'endurance', label: 'Improve endurance', desc: 'Boost stamina and cardio fitness' },
+      { id: 'general', label: 'General fitness', desc: 'Stay active and feel better' }
+    ];
+    const options = base.map((o) => {
+      const isSelected = this.state.selected === o.id;
+      return {
+        id: o.id,
+        label: o.label,
+        desc: o.desc,
+        pick: () => this.pick(o.id, o.label),
+        cardStyle: isSelected
+          ? 'width:100%;box-sizing:border-box;display:block;padding:18px;border-radius:14px;background:#1E2023;border:1.5px solid #C6FF4D;'
+          : 'width:100%;box-sizing:border-box;display:block;padding:18px;border-radius:14px;background:#17181B;border:1.5px solid #2B2D31;'
+      };
+    });
+    const hasSelection = !!this.state.selected;
+    return { options, hasSelection, noSelection: !hasSelection };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Active Workout</title>
+<script src="./support.js"></script>
+<script src="./store.js"></script>
+<script src="./api-client.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{text-decoration:none}
+button{font-family:'Inter',sans-serif;cursor:pointer}
+input{font-family:'Inter',sans-serif;outline:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0C0E; position: relative; overflow: hidden;">
+
+  <div style="padding: 24px 24px 0; display: flex; flex-direction: column; gap: 24px; height: 100%; box-sizing: border-box;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <button type="button" onClick="{{showExitFn}}" aria-label="Exit workout" style="width: 40px; height: 40px; border-radius: 10px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div style="font-size: 13px; font-weight: 600; color: #9BA1A8;">{{progressLabel}}</div>
+      <div style="width: 40px;"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="width: 100%; height: 4px; border-radius: 2px; background: #2B2D31;"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 12px;">
+      <div style="width: 100%; height: 180px; border-radius: 16px; background: #17181B; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #6B7178;">[exercise illustration]</div>
+      <div style="font-size: 24px; font-weight: 700; color: #F5F6F7; text-align: center;">{{currentExercise.name}}</div>
+      <div style="font-size: 14px; color: #9BA1A8;">{{setLabel}}</div>
+    </div>
+
+    <div style="display: flex; gap: 14px;">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 12px; font-weight: 600; color: #9BA1A8;">Reps</label>
+        <input type="number" value="{{repsValue}}" onChange="{{onRepsChange}}" style="{{repsStyle}}">
+      </div>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 12px; font-weight: 600; color: #9BA1A8;">Weight (kg)</label>
+        <input type="number" value="{{weightValue}}" onChange="{{onWeightChange}}" style="{{weightStyle}}">
+      </div>
+    </div>
+    <sc-if value="{{showInvalidHint}}" hint-placeholder-val="{{false}}">
+      <div style="font-size: 12px; color: #FF6B6B; margin-top: -12px;">Enter reps and weight before saving this set.</div>
+    </sc-if>
+
+    <sc-if value="{{showSyncError}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #17181B; border: 1px solid #FF6B6B; border-radius: 12px; padding: 12px 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div style="font-size: 12px; color: #9BA1A8;">{{syncErrorMessage}}</div>
+        </div>
+        <button type="button" onClick="{{retryFn}}" style="font-size: 12px; font-weight: 700; color: #C6FF4D; background: none; border: none; padding: 0;">Retry</button>
+      </div>
+    </sc-if>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="padding-bottom: 32px;">
+      <sc-if value="{{finalValid}}" hint-placeholder-val="{{false}}">
+        <button type="button" onClick="{{finishFn}}" style="{{finalButtonStyle}}">{{finalButtonLabel}}</button>
+      </sc-if>
+      <sc-if value="{{finalInvalid}}" hint-placeholder-val="{{false}}">
+        <button type="button" disabled style="display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border-radius: 12px; background: #3A3C40; color: #6B7178; font-size: 16px; font-weight: 700; border: none; box-sizing: border-box;">Complete Workout</button>
+      </sc-if>
+      <sc-if value="{{midValid}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{completeSet}}" style="{{midButtonStyle}}">{{midButtonLabel}}</button>
+      </sc-if>
+      <sc-if value="{{midInvalid}}" hint-placeholder-val="{{false}}">
+        <button type="button" disabled style="display: flex; align-items: center; justify-content: center; width: 100%; height: 56px; border-radius: 12px; background: #3A3C40; color: #6B7178; font-size: 16px; font-weight: 700; border: none; box-sizing: border-box;">Save &amp; Complete Set</button>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <sc-if value="{{showRest}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(11,12,14,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px; box-sizing: border-box;">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9BA1A8;">Rest</div>
+      <div style="font-size: 56px; font-weight: 800; color: #C6FF4D;">00:45</div>
+      <div style="font-size: 14px; color: #9BA1A8; text-align: center;">Next: {{nextLabel}}</div>
+      <button type="button" onClick="{{skipRestFn}}" style="height: 52px; padding: 0 32px; border-radius: 12px; background: transparent; color: #F5F6F7; font-size: 15px; font-weight: 600; border: 1.5px solid #3A3C40;">Skip</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showExit}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(11,12,14,0.85); display: flex; align-items: center; justify-content: center; padding: 32px; box-sizing: border-box;">
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 16px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px;">
+        <div style="font-size: 18px; font-weight: 700; color: #F5F6F7;">Exit workout?</div>
+        <div style="font-size: 14px; color: #9BA1A8;">Your progress on this workout will not be saved.</div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+          <button type="button" onClick="{{hideExitFn}}" style="height: 50px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-size: 15px; font-weight: 700; border: none;">Keep Training</button>
+          <a href="Home.dc.html" style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 12px; background: transparent; color: #FF6B6B; font-size: 15px; font-weight: 600;">Exit Workout</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var FALLBACK_EXERCISES = [
+  { name: 'Bench Press', sets: 3, reps: 10, weight: 60 },
+  { name: 'Dumbbell Row', sets: 3, reps: 12, weight: 20 },
+  { name: 'Overhead Press', sets: 3, reps: 8, weight: 35 }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var w = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+    if (!w) {
+      w = { exercises: FALLBACK_EXERCISES, exerciseIndex: 0, setIndex: 0, backendSessionId: null };
+      if (window.FitAI) window.FitAI.startWorkout({ title: 'Workout', duration: '', difficulty: '', exercises: FALLBACK_EXERCISES });
+    }
+    var current = w.exercises[w.exerciseIndex];
+    this.state = {
+      exerciseIndex: w.exerciseIndex,
+      setIndex: w.setIndex,
+      showRest: false,
+      showExit: false,
+      reps: String(current.reps),
+      weight: String(current.weight),
+      syncing: false,
+      syncError: null
+    };
+  }
+  componentDidMount() {
+    if (window.FitAIAuth) window.FitAIAuth.guardPage();
+  }
+  exercises() {
+    var w = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+    return w ? w.exercises : FALLBACK_EXERCISES;
+  }
+  backendSessionId() {
+    var w = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+    return w ? w.backendSessionId : null;
+  }
+  isCurrentValid() {
+    var reps = Number(this.state.reps);
+    var weight = Number(this.state.weight);
+    return this.state.reps !== '' && reps > 0 && this.state.weight !== '' && weight >= 0;
+  }
+  // Advances local state exactly as before Phase 2.3 — used both as the
+  // pure-local path and as the local mirror once a backend save succeeds.
+  advanceLocally() {
+    var exercises = this.exercises();
+    var result = window.FitAI.logCurrentSet(Number(this.state.reps), Number(this.state.weight));
+    if (!result || result.isFinal) return;
+    var w = result.workout;
+    var nextEx = exercises[w.exerciseIndex];
+    this.setState({
+      exerciseIndex: w.exerciseIndex,
+      setIndex: w.setIndex,
+      showRest: true,
+      reps: String(nextEx.reps),
+      weight: String(nextEx.weight),
+      syncing: false,
+      syncError: null
+    });
+  }
+  async completeSet() {
+    if (!this.isCurrentValid() || this.state.syncing) return;
+    var sessionId = this.backendSessionId();
+    if (!sessionId || !window.FitAISessions) {
+      this.advanceLocally();
+      return;
+    }
+    this.setState({ syncing: true, syncError: null });
+    var result = await window.FitAISessions.logSet(sessionId, {
+      exercise_index: this.state.exerciseIndex,
+      set_index: this.state.setIndex,
+      reps: Number(this.state.reps),
+      weight: Number(this.state.weight)
+    });
+    if (result.ok || result.unconfigured) {
+      // Saved on the server (or no server configured, which isn't a
+      // failure) — advance locally too, so the mirror stays correct.
+      this.advanceLocally();
+      return;
+    }
+    // Real failure: preserve the user's input exactly as typed and show
+    // a retry control rather than silently losing or duplicating it.
+    this.setState({ syncing: false, syncError: 'Couldn\u2019t save that set — check your connection.' });
+  }
+  async finish() {
+    if (!this.isCurrentValid() || this.state.syncing) return;
+    var sessionId = this.backendSessionId();
+    if (!sessionId || !window.FitAISessions) {
+      window.FitAI.logCurrentSet(Number(this.state.reps), Number(this.state.weight));
+      window.FitAI.completeWorkout();
+      return;
+    }
+    this.setState({ syncing: true, syncError: null });
+    var setResult = await window.FitAISessions.logSet(sessionId, {
+      exercise_index: this.state.exerciseIndex,
+      set_index: this.state.setIndex,
+      reps: Number(this.state.reps),
+      weight: Number(this.state.weight)
+    });
+    if (!setResult.ok && !setResult.unconfigured) {
+      this.setState({ syncing: false, syncError: 'Couldn\u2019t save that set — check your connection.' });
+      return;
+    }
+    var completeResult = await window.FitAISessions.completeSession(sessionId);
+    if (completeResult.ok && completeResult.data && completeResult.data.session) {
+      window.FitAI.logCurrentSet(Number(this.state.reps), Number(this.state.weight));
+      window.FitAI.completeWorkoutFromServer(completeResult.data.session);
+      return;
+    }
+    if (completeResult.unconfigured) {
+      window.FitAI.logCurrentSet(Number(this.state.reps), Number(this.state.weight));
+      window.FitAI.completeWorkout();
+      return;
+    }
+    this.setState({ syncing: false, syncError: 'Couldn\u2019t complete the workout — check your connection.' });
+  }
+  retry() {
+    // Whichever action failed (mid-set save or the final completion) is
+    // the same action the user just attempted — re-run based on step.
+    var exercises = this.exercises();
+    var currentExercise = exercises[this.state.exerciseIndex];
+    var isFinal = this.state.exerciseIndex === exercises.length - 1 && this.state.setIndex === currentExercise.sets - 1;
+    this.setState({ syncError: null });
+    if (isFinal) this.finish(); else this.completeSet();
+  }
+  skipRest() {
+    this.setState({ showRest: false });
+  }
+  renderVals() {
+    var exercises = this.exercises();
+    var currentExercise = exercises[this.state.exerciseIndex];
+    var isFinal = this.state.exerciseIndex === exercises.length - 1 && this.state.setIndex === currentExercise.sets - 1;
+    var valid = this.isCurrentValid();
+    var nextIndex = this.state.setIndex < currentExercise.sets - 1 ? this.state.exerciseIndex : this.state.exerciseIndex + 1;
+    var nextLabel = nextIndex < exercises.length ? exercises[nextIndex].name : 'Workout complete';
+    var baseInput = 'height:56px;border-radius:12px;background:#1E2023;color:#F5F6F7;font-size:20px;font-weight:700;text-align:center;box-sizing:border-box;border:1px solid #2B2D31;';
+    var errorInput = 'height:56px;border-radius:12px;background:#1E2023;color:#F5F6F7;font-size:20px;font-weight:700;text-align:center;box-sizing:border-box;border:1.5px solid #FF6B6B;';
+    var enabledBtn = 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#C6FF4D;color:#0B0C0E;font-size:16px;font-weight:700;border:none;box-sizing:border-box;';
+    var syncingBtn = 'display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:12px;background:#17181B;color:#9BA1A8;font-size:16px;font-weight:700;border:1px solid #2B2D31;box-sizing:border-box;';
+    return {
+      currentExercise,
+      progressLabel: `Exercise ${this.state.exerciseIndex + 1} of ${exercises.length}`,
+      setLabel: `Set ${this.state.setIndex + 1} of ${currentExercise.sets}`,
+      repsValue: this.state.reps,
+      weightValue: this.state.weight,
+      repsStyle: valid ? baseInput : (this.state.reps === '' ? errorInput : baseInput),
+      weightStyle: valid ? baseInput : (this.state.weight === '' ? errorInput : baseInput),
+      showInvalidHint: !valid,
+      onRepsChange: (e) => this.setState({ reps: e.target.value }),
+      onWeightChange: (e) => this.setState({ weight: e.target.value }),
+      finalValid: isFinal && valid,
+      finalInvalid: isFinal && !valid,
+      midValid: !isFinal && valid,
+      midInvalid: !isFinal && !valid,
+      finalButtonLabel: this.state.syncing ? 'Completing workout…' : 'Complete Workout',
+      finalButtonStyle: this.state.syncing ? syncingBtn : enabledBtn,
+      midButtonLabel: this.state.syncing ? 'Saving set…' : 'Save & Complete Set',
+      midButtonStyle: this.state.syncing ? syncingBtn : enabledBtn,
+      showSyncError: !!this.state.syncError,
+      syncErrorMessage: this.state.syncError || '',
+      retryFn: () => this.retry(),
+      showRest: this.state.showRest,
+      showExit: this.state.showExit,
+      nextLabel,
+      completeSet: () => this.completeSet(),
+      finishFn: () => this.finish(),
+      skipRestFn: () => this.skipRest(),
+      showExitFn: () => this.setState({ showExit: true }),
+      hideExitFn: () => this.setState({ showExit: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

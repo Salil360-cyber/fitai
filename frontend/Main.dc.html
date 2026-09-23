@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI Design System Foundation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#0B0C0E}
+a{color:#C6FF4D}a:hover{color:#9FDB2E}
+</style>
+</helmet>
+<div style="width: 1200px; height: 3260px; box-sizing: border-box; background: #0B0C0E; padding: 64px; display: flex; flex-direction: column; gap: 56px;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C6FF4D;">FitAI Design System</div>
+    <h1 style="margin: 0; font-size: 36px; font-weight: 700; color: #F5F6F7;">Foundation — Color, Type, Spacing &amp; Components</h1>
+    <div style="font-size: 15px; line-height: 22px; color: #9BA1A8; max-width: 760px;">A premium, focused visual language for a mobile fitness companion: dark charcoal ground, a single energetic lime accent, Inter throughout. Built for the onboarding screens and reused across the rest of FitAI.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Color</h2>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #0B0C0E; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Background</div>
+        <div style="font-size: 13px; color: #6B7178;">#0B0C0E · page ground</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #17181B; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Surface</div>
+        <div style="font-size: 13px; color: #6B7178;">#17181B · cards</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #1E2023; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Surface 2</div>
+        <div style="font-size: 13px; color: #6B7178;">#1E2023 · inputs, elevated</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #2B2D31; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Border</div>
+        <div style="font-size: 13px; color: #6B7178;">#2B2D31 · hairlines</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #C6FF4D; border: 1px solid #C6FF4D;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Lime (Primary)</div>
+        <div style="font-size: 13px; color: #6B7178;">#C6FF4D · CTAs, active</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #9FDB2E; border: 1px solid #9FDB2E;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Lime Pressed</div>
+        <div style="font-size: 13px; color: #6B7178;">#9FDB2E · pressed state</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #F5F6F7; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #0B0C0E; background: transparent;">Text Primary</div>
+        <div style="font-size: 13px; color: #6B7178;">#F5F6F7 · headings, body</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #9BA1A8; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Text Secondary</div>
+        <div style="font-size: 13px; color: #6B7178;">#9BA1A8 · captions, meta</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #6B7178; border: 1px solid #2B2D31;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Text Tertiary</div>
+        <div style="font-size: 13px; color: #6B7178;">#6B7178 · disabled, hints</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="width: 100%; height: 88px; border-radius: 12px; background: #FF6B6B; border: 1px solid #FF6B6B;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: #F5F6F7;">Error</div>
+        <div style="font-size: 13px; color: #6B7178;">#FF6B6B · validation</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Typography — Inter</h2>
+    <div style="display: flex; flex-direction: column; gap: 18px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 28px;">
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid #2B2D31;">
+        <div style="font-size: 36px; font-weight: 700; color: #F5F6F7;">Display 36 / 700</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Onboarding hero text</div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid #2B2D31;">
+        <div style="font-size: 26px; font-weight: 700; color: #F5F6F7;">H1 26 / 700</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Screen titles</div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid #2B2D31;">
+        <div style="font-size: 20px; font-weight: 600; color: #F5F6F7;">H2 20 / 600</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Section headers</div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid #2B2D31;">
+        <div style="font-size: 17px; font-weight: 600; color: #F5F6F7;">H3 17 / 600</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Card titles</div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid #2B2D31;">
+        <div style="font-size: 15px; font-weight: 400; color: #F5F6F7;">Body 15 / 400</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Primary content</div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px;">
+        <div style="font-size: 13px; font-weight: 400; color: #F5F6F7;">Caption 13 / 400</div>
+        <div style="font-size: 13px; color: #6B7178; white-space: nowrap;">Metadata, timestamps</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 56px;">
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px;">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Spacing — 4px scale</h2>
+      <div style="display: flex; flex-direction: column; gap: 14px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 4px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">4</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 8px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">8</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 12px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">12</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 16px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">16</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 24px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">24</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 32px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">32</div></div>
+        <div style="display: flex; align-items: center; gap: 16px;"><div style="width: 48px; height: 12px; background: #C6FF4D; border-radius: 2px;"></div><div style="font-size: 14px; color: #9BA1A8;">48</div></div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px;">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Radius</h2>
+      <div style="display: flex; gap: 24px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 24px; align-items: flex-end;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 64px; height: 64px; border-radius: 8px; background: #1E2023; border: 1px solid #2B2D31;"></div><div style="font-size: 13px; color: #9BA1A8;">8 · inputs</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 64px; height: 64px; border-radius: 12px; background: #1E2023; border: 1px solid #2B2D31;"></div><div style="font-size: 13px; color: #9BA1A8;">12 · buttons</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 64px; height: 64px; border-radius: 16px; background: #1E2023; border: 1px solid #2B2D31;"></div><div style="font-size: 13px; color: #9BA1A8;">16 · cards</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 64px; height: 64px; border-radius: 24px; background: #1E2023; border: 1px solid #2B2D31;"></div><div style="font-size: 13px; color: #9BA1A8;">24 · sheets</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Buttons</h2>
+    <div style="display: flex; flex-direction: column; gap: 20px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 28px;">
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; color: #6B7178;">Primary</div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <button type="button" style="height: 52px; padding: 0 24px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; border: none; cursor: pointer;">Default</button>
+          <button type="button" style="height: 52px; padding: 0 24px; border-radius: 12px; background: #9FDB2E; color: #0B0C0E; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; border: none; cursor: pointer;">Pressed</button>
+          <button type="button" disabled style="height: 52px; padding: 0 24px; border-radius: 12px; background: #3A3C40; color: #6B7178; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; border: none;">Disabled</button>
+          <button type="button" style="height: 52px; padding: 0 24px; border-radius: 12px; background: #C6FF4D; color: #0B0C0E; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #0B0C0E; border-top-color: transparent; display: inline-block;"></span>
+            Loading
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; color: #6B7178;">Secondary &amp; Text</div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <button type="button" style="height: 52px; padding: 0 24px; border-radius: 12px; background: transparent; color: #F5F6F7; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; border: 1.5px solid #3A3C40; cursor: pointer;">Secondary</button>
+          <button type="button" style="height: 52px; padding: 0 12px; border-radius: 12px; background: transparent; color: #C6FF4D; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; border: none; cursor: pointer;">Text button</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 56px;">
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px;">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Input Field</h2>
+      <div style="display: flex; flex-direction: column; gap: 16px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 28px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 13px; font-weight: 600; color: #9BA1A8;">Default</label>
+          <input type="text" placeholder="you@example.com" style="height: 52px; border-radius: 12px; background: #1E2023; border: 1px solid #2B2D31; color: #F5F6F7; font-family: 'Inter', sans-serif; font-size: 15px; padding: 0 16px; box-sizing: border-box; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 13px; font-weight: 600; color: #C6FF4D;">Focused</label>
+          <input type="text" value="taps into focus" style="height: 52px; border-radius: 12px; background: #1E2023; border: 1.5px solid #C6FF4D; color: #F5F6F7; font-family: 'Inter', sans-serif; font-size: 15px; padding: 0 16px; box-sizing: border-box; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 13px; font-weight: 600; color: #FF6B6B;">Error</label>
+          <input type="text" value="not a valid email" style="height: 52px; border-radius: 12px; background: #1E2023; border: 1.5px solid #FF6B6B; color: #F5F6F7; font-family: 'Inter', sans-serif; font-size: 15px; padding: 0 16px; box-sizing: border-box; outline: none;">
+          <div style="font-size: 13px; color: #FF6B6B;">Enter a valid email address</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px;">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Progress Indicator</h2>
+      <div style="display: flex; flex-direction: column; gap: 16px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 28px;">
+        <div style="font-size: 13px; color: #6B7178;">Onboarding · step 2 of 3</div>
+        <div style="display: flex; gap: 8px;">
+          <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #C6FF4D;"></div>
+          <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #C6FF4D;"></div>
+          <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #2B2D31;"></div>
+        </div>
+        <div style="font-size: 13px; color: #6B7178; margin-top: 8px;">Generating a workout · step 3 of 4</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #C6FF4D;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #C6FF4D;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #C6FF4D;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #2B2D31;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Selection Card</h2>
+    <div style="display: flex; gap: 16px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 28px;">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 14px; background: #17181B; border: 1.5px solid #2B2D31;">
+        <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">Beginner</div>
+        <div style="font-size: 13px; color: #9BA1A8;">New to structured training</div>
+        <div style="font-size: 12px; color: #6B7178; margin-top: 4px;">Default state</div>
+      </div>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 14px; background: #1E2023; border: 1.5px solid #C6FF4D;">
+        <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">Intermediate</div>
+        <div style="font-size: 13px; color: #9BA1A8;">Training consistently for 6+ months</div>
+        <div style="font-size: 12px; color: #C6FF4D; margin-top: 4px;">Selected state</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Bottom Navigation</h2>
+    <div style="display: flex; align-items: center; justify-content: space-around; background: #121316; border: 1px solid #2B2D31; border-radius: 20px; padding: 14px 8px; width: 420px;">
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6FF4D" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <div style="font-size: 11px; font-weight: 600; color: #C6FF4D;">Home</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M4 9v6M20 9v6M7 7v10M17 7v10M2 12h3M19 12h3"/></svg>
+        <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Workouts</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Progress</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/></svg>
+        <div style="font-size: 11px; font-weight: 500; color: #6B7178;">AI Coach</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7178" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+        <div style="font-size: 11px; font-weight: 500; color: #6B7178;">Profile</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #F5F6F7;">Card — Workout</h2>
+    <div style="display: flex; gap: 20px;">
+      <div style="width: 260px; display: flex; flex-direction: column; gap: 12px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 16px;">
+        <div style="width: 100%; height: 120px; border-radius: 10px; background: #1E2023; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6B7178;">[workout image]</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">Upper Body Strength</div>
+          <div style="font-size: 13px; color: #9BA1A8;">32 min · Intermediate</div>
+        </div>
+      </div>
+      <div style="width: 260px; display: flex; flex-direction: column; gap: 12px; background: #17181B; border: 1px solid #2B2D31; border-radius: 16px; padding: 16px;">
+        <div style="width: 100%; height: 120px; border-radius: 10px; background: #1E2023; border: 1px solid #2B2D31; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6B7178;">[workout image]</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 16px; font-weight: 600; color: #F5F6F7;">Full Body HIIT</div>
+            <div style="font-size: 10px; font-weight: 700; color: #0B0C0E; background: #C6FF4D; border-radius: 999px; padding: 3px 8px;">AI</div>
+          </div>
+          <div style="font-size: 13px; color: #9BA1A8;">20 min · Beginner</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":3260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
