@@ -1,23 +1,23 @@
-const db = require('./db');
+const { pool } = require('./db');
 
 function normalizeCategory(v) {
   return String(v || '').toLowerCase().replace(/\s+/g, '');
 }
 
-function listWorkouts(category) {
-  let rows;
+async function listWorkouts(category) {
+  const { rows } = await pool.query('SELECT * FROM workouts');
+  let filtered;
   if (!category) {
-    rows = db.prepare('SELECT * FROM workouts').all();
+    filtered = rows;
   } else if (normalizeCategory(category) === 'recommended') {
-    rows = db.prepare('SELECT * FROM workouts WHERE is_recommended = 1').all();
+    filtered = rows.filter((w) => w.is_recommended);
   } else {
     // Normalize both sides so the frontend's existing lowercase ids
     // ("strength", "fullbody") match the stored display categories
     // ("Strength", "Full Body") without changing either one.
-    rows = db.prepare('SELECT * FROM workouts').all()
-      .filter((w) => normalizeCategory(w.category) === normalizeCategory(category));
+    filtered = rows.filter((w) => normalizeCategory(w.category) === normalizeCategory(category));
   }
-  return rows.map((w) => ({
+  return filtered.map((w) => ({
     id: w.id,
     title: w.title,
     duration_min: w.duration_min,
@@ -28,12 +28,14 @@ function listWorkouts(category) {
   }));
 }
 
-function getWorkoutById(id) {
-  const w = db.prepare('SELECT * FROM workouts WHERE id = ?').get(id);
+async function getWorkoutById(id) {
+  const { rows } = await pool.query('SELECT * FROM workouts WHERE id = $1', [id]);
+  const w = rows[0];
   if (!w) return null;
-  const exercises = db.prepare(
-    'SELECT name, sets, reps, weight, order_index FROM workout_exercises WHERE workout_id = ? ORDER BY order_index ASC'
-  ).all(id);
+  const { rows: exercises } = await pool.query(
+    'SELECT name, sets, reps, weight, order_index FROM workout_exercises WHERE workout_id = $1 ORDER BY order_index ASC',
+    [id]
+  );
   return {
     id: w.id,
     title: w.title,

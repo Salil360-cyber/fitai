@@ -2,8 +2,7 @@
 
 **FitAI** is an AI-powered fitness/workout companion — a self-initiated
 UX/UI case study and working prototype. This repository contains the
-current, complete source as of Phase 2.7: a Node.js/Express/SQLite
-backend and a frontend built on Claude's Artifact "Design" canvas format
+current, complete source: a Node.js/Express/PostgreSQL backend and a frontend built on Claude's Artifact "Design" canvas format
 (`.dc.html` boards).
 
 ## What's implemented

@@ -1,9 +1,8 @@
-const db = require('./db');
+const { pool } = require('./db');
 
 // Matches the existing onboarding vocabulary exactly (FitnessGoal.dc.html,
 // FitnessLevel.dc.html, Preferences.dc.html store the human-readable
-// LABELS, not ids — e.g. "Build muscle", not "build" — so validation
-// here accepts that same label set rather than inventing new values).
+// LABELS, not ids — e.g. "Build muscle", not "build").
 const GOAL_LABELS = ['Lose weight', 'Build muscle', 'Improve endurance', 'General fitness'];
 const LEVEL_LABELS = ['Beginner', 'Intermediate', 'Advanced'];
 const PREFERENCE_LABELS = ['Strength', 'Cardio', 'Mobility', 'Full Body', 'Outdoor'];
@@ -19,10 +18,10 @@ function rowToProfile(row, email) {
   };
 }
 
-function getProfile(userId, email) {
-  const row = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(userId);
-  if (!row) return null;
-  return rowToProfile(row, email);
+async function getProfile(userId, email) {
+  const { rows } = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
+  if (!rows[0]) return null;
+  return rowToProfile(rows[0], email);
 }
 
 function validateUpdate(body) {
@@ -60,24 +59,28 @@ function validateUpdate(body) {
   return { updates };
 }
 
-function updateProfile(userId, email, body) {
+async function updateProfile(userId, email, body) {
   const validated = validateUpdate(body);
   if (validated.error) return { error: validated.error };
 
-  const existing = db.prepare('SELECT * FROM profiles WHERE user_id = ?').get(userId);
-  if (!existing) {
+  const { rows: existingRows } = await pool.query('SELECT 1 FROM profiles WHERE user_id = $1', [userId]);
+  if (existingRows.length === 0) {
     // Defensive: every authenticated user was given a profile row at
     // registration. If one is somehow missing, create exactly one row
     // rather than silently duplicating or failing.
-    db.prepare('INSERT INTO profiles (user_id, name, preferences) VALUES (?, ?, ?)').run(userId, validated.updates.name || 'FitAI User', '[]');
+    await pool.query(
+      'INSERT INTO profiles (user_id, name, preferences) VALUES ($1, $2, $3)',
+      [userId, validated.updates.name || 'FitAI User', '[]']
+    );
   }
 
   const fields = Object.keys(validated.updates);
-  const sets = fields.map((f) => `${f} = ?`).join(', ');
+  const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
   const values = fields.map((f) => (f === 'preferences' ? JSON.stringify(validated.updates[f]) : validated.updates[f]));
-  db.prepare(`UPDATE profiles SET ${sets} WHERE user_id = ?`).run(...values, userId);
+  values.push(userId);
+  await pool.query(`UPDATE profiles SET ${setClause} WHERE user_id = $${fields.length + 1}`, values);
 
-  return { profile: getProfile(userId, email) };
+  return { profile: await getProfile(userId, email) };
 }
 
 module.exports = { getProfile, updateProfile, GOAL_LABELS, LEVEL_LABELS, PREFERENCE_LABELS };

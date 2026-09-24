@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Coach</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+    <button type="button" id="backBtn" class="icon-btn" style="display: none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <a href="Home.html" aria-label="Close" class="icon-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </a>
+    <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime);">AI Coach</div>
+  </div>
+
+  <div id="dots" class="progress-dots" style="margin-bottom: 24px;"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px;">
+    <h1 id="stepTitle" style="margin: 0; font-size: 24px; font-weight: 700;"></h1>
+    <div id="stepSubtitle" style="font-size: 14px; color: var(--text-secondary);"></div>
+  </div>
+
+  <div id="optionsChips" style="display: flex; flex-wrap: wrap; gap: 10px; flex-grow: 1;"></div>
+  <div id="optionsCards" style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;"></div>
+
+  <div id="generatingArea" style="display: none; flex-direction: column; gap: 16px; align-items: center; padding: 20px 0;">
+    <div id="loadingRow" class="card" style="display: flex; align-items: center; gap: 10px; height: 56px; width: 100%; box-sizing: border-box; justify-content: center;">
+      <span class="spinner"></span>
+      <span style="font-size: 15px; font-weight: 600;">Generating your workout…</span>
+    </div>
+    <div id="fallbackNote" style="font-size: 12px; color: var(--text-secondary); text-align: center; display: none;"></div>
+    <a href="AIGeneratedWorkout.html" id="viewBtn" class="btn-primary" style="width: 100%; display: none;">View Your Workout</a>
+  </div>
+
+  <button type="button" id="nextBtn" class="btn-primary btn-disabled" style="width: 100%; border: none;"></button>
+
+</div>
+<script>
+  function stepDefs() {
+    return [
+      { title: "What's your goal for this workout?", subtitle: 'We\u2019ll tailor exercises to match.', cards: true, field: 'goal',
+        items: [{ id: 'lose', label: 'Lose weight' }, { id: 'build', label: 'Build muscle' }, { id: 'endurance', label: 'Improve endurance' }, { id: 'general', label: 'General fitness' }] },
+      { title: 'How much time do you have?', subtitle: 'Pick what fits your schedule today.', cards: false, field: 'time',
+        items: [{ id: '15', label: '15 min' }, { id: '30', label: '30 min' }, { id: '45', label: '45 min' }, { id: '60', label: '60 min' }] },
+      { title: "What's your fitness level?", subtitle: 'This sets the intensity and pacing.', cards: true, field: 'level',
+        items: [{ id: 'beginner', label: 'Beginner' }, { id: 'intermediate', label: 'Intermediate' }, { id: 'advanced', label: 'Advanced' }] },
+      { title: 'What equipment do you have?', subtitle: 'Select all that apply.', cards: false, field: 'equipment', multi: true,
+        items: [{ id: 'bodyweight', label: 'Bodyweight only' }, { id: 'dumbbells', label: 'Dumbbells' }, { id: 'bands', label: 'Resistance Bands' }, { id: 'gym', label: 'Full Gym' }] }
+    ];
+  }
+
+  var saved = window.FitAI ? window.FitAI.get().aiCoach : { goal: null, time: null, level: null, equipment: {} };
+  var s = { step: 0, goal: saved.goal || null, time: saved.time || null, level: saved.level || null, equipment: saved.equipment || {}, generating: false, loading: false, usedFallback: false, hadError: false };
+
+  function currentStepValid() {
+    var steps = stepDefs(), cur = steps[s.step];
+    return cur.multi ? Object.values(s.equipment).some(Boolean) : !!s[cur.field];
+  }
+
+  function render() {
+    var steps = stepDefs(), cur = steps[s.step];
+    document.getElementById('backBtn').style.display = s.step > 0 ? 'flex' : 'none';
+    document.getElementById('stepTitle').textContent = cur.title;
+    document.getElementById('stepSubtitle').textContent = cur.subtitle;
+
+    var dots = document.getElementById('dots');
+    dots.innerHTML = '';
+    for (var i = 0; i < 4; i++) {
+      var d = document.createElement('div');
+      d.className = i <= s.step ? 'dot-fill' : 'dot-empty';
+      dots.appendChild(d);
+    }
+
+    var selectedValue = cur.multi ? s.equipment : s[cur.field];
+    var chipsEl = document.getElementById('optionsChips');
+    var cardsEl = document.getElementById('optionsCards');
+    chipsEl.style.display = cur.cards ? 'none' : 'flex';
+    cardsEl.style.display = cur.cards ? 'flex' : 'none';
+    chipsEl.innerHTML = ''; cardsEl.innerHTML = '';
+
+    cur.items.forEach(function (it) {
+      var isSel = cur.multi ? !!selectedValue[it.id] : selectedValue === it.id;
+      var pick = function () {
+        if (cur.multi) {
+          s.equipment[it.id] = !s.equipment[it.id];
+          if (window.FitAI) window.FitAI.toggleEquipment(it.id);
+        } else {
+          s[cur.field] = it.id;
+          if (window.FitAI) window.FitAI.setAICoachField(cur.field, it.id);
+        }
+        render();
+      };
+      if (cur.cards) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = 'width:100%;box-sizing:border-box;display:block;text-align:left;padding:18px;border-radius:14px;' +
+          (isSel ? 'background:var(--surface-2);border:1.5px solid var(--lime);' : 'background:var(--surface);border:1.5px solid var(--border);');
+        btn.innerHTML = '<div style="font-size:16px;font-weight:600;">' + it.label + '</div>';
+        btn.addEventListener('click', pick);
+        cardsEl.appendChild(btn);
+      } else {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (isSel ? ' selected' : '');
+        chip.textContent = it.label;
+        chip.addEventListener('click', pick);
+        chipsEl.appendChild(chip);
+      }
+    });
+
+    var hasSelection = currentStepValid();
+    var nextBtn = document.getElementById('nextBtn');
+    nextBtn.style.display = s.generating ? 'none' : 'flex';
+    nextBtn.classList.toggle('btn-disabled', !hasSelection);
+    nextBtn.disabled = !hasSelection;
+    nextBtn.textContent = s.step < 3 ? 'Next' : 'Generate Workout';
+
+    var genArea = document.getElementById('generatingArea');
+    genArea.style.display = s.generating ? 'flex' : 'none';
+    document.getElementById('loadingRow').style.display = s.loading ? 'flex' : 'none';
+    document.getElementById('viewBtn').style.display = (s.generating && !s.loading) ? 'flex' : 'none';
+    var noteEl = document.getElementById('fallbackNote');
+    if (s.generating && !s.loading && s.usedFallback) {
+      noteEl.style.display = 'block';
+      noteEl.textContent = s.hadError ? 'AI service unavailable right now — using the offline workout builder instead.' : 'Using the offline workout builder (no AI service configured).';
+    } else {
+      noteEl.style.display = 'none';
+    }
+  }
+
+  function currentInputs() { return { goal: s.goal, time: s.time, level: s.level, equipment: s.equipment }; }
+
+  function normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || ('Built for your ' + s.time + '-minute ' + s.goal + ' goal at ' + s.level + ' level.'),
+      exercises: workout.exercises.map(function (ex) { return { name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec }; }),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+
+  async function generate() {
+    s.generating = true; s.loading = true; s.usedFallback = false; s.hadError = false; render();
+    var inputs = currentInputs();
+
+    if (window.FitAIAI) {
+      var realInput = { goal: s.goal, duration_min: Number(s.time), fitness_level: s.level, equipment: Object.keys(s.equipment).filter(function (k) { return s.equipment[k]; }) };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        s.loading = false; s.usedFallback = false; s.hadError = false; render();
+        return;
+      }
+      if (!result.unconfigured) { s.hadError = true; }
+    }
+    var local = window.FitAI ? window.FitAI.generateWorkout(inputs, 0) : null;
+    if (local && window.FitAI) {
+      window.FitAI.patch({ generatedWorkout: normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    s.loading = false; s.usedFallback = true; render();
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', function () {
+    if (!currentStepValid()) return;
+    if (s.step < 3) { s.step++; render(); } else { generate(); }
+  });
+  document.getElementById('backBtn').addEventListener('click', function () {
+    if (s.step > 0) { s.step--; render(); }
+  });
+
+  render();
+  (async function checkAuth() { if (window.FitAIAuth) await window.FitAIAuth.guardPage(); })();
+</script>
+</body>
+</html>

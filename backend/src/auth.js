@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const db = require('./db');
+const { pool } = require('./db');
 
 const SALT_ROUNDS = 12;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -21,42 +21,56 @@ async function verifyPassword(password, hash) {
   return bcrypt.compare(password, hash);
 }
 
-function createUser({ id, email, passwordHash }) {
-  db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(id, email, passwordHash);
+async function createUser({ id, email, passwordHash }, client) {
+  const createdAt = new Date().toISOString();
+  await (client || pool).query(
+    'INSERT INTO users (id, email, password_hash, created_at) VALUES ($1, $2, $3, $4)',
+    [id, email, passwordHash, createdAt]
+  );
 }
 
-function createProfile({ userId, name }) {
-  db.prepare('INSERT INTO profiles (user_id, name, preferences) VALUES (?, ?, ?)').run(userId, name, '[]');
+async function createProfile({ userId, name }, client) {
+  await (client || pool).query(
+    'INSERT INTO profiles (user_id, name, preferences) VALUES ($1, $2, $3)',
+    [userId, name, '[]']
+  );
 }
 
-function findUserByEmail(email) {
-  return db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+async function findUserByEmail(email) {
+  const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  return rows[0] || null;
 }
 
-function findUserById(id) {
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+async function findUserById(id) {
+  const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+  return rows[0] || null;
 }
 
-function createSession(userId) {
+async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
+  const createdAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
-  db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, expiresAt);
+  await pool.query(
+    'INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)',
+    [token, userId, createdAt, expiresAt]
+  );
   return { token, expiresAt };
 }
 
-function getSessionUser(token) {
+async function getSessionUser(token) {
   if (!token) return null;
-  const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  const { rows } = await pool.query('SELECT * FROM sessions WHERE token = $1', [token]);
+  const session = rows[0];
   if (!session) return null;
   if (new Date(session.expires_at).getTime() < Date.now()) {
-    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    await pool.query('DELETE FROM sessions WHERE token = $1', [token]);
     return null;
   }
   return findUserById(session.user_id);
 }
 
-function destroySession(token) {
-  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+async function destroySession(token) {
+  await pool.query('DELETE FROM sessions WHERE token = $1', [token]);
 }
 
 function safeUser(user) {

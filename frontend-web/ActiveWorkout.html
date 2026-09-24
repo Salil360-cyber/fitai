@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Active Workout</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="overflow: hidden;">
+
+  <div style="padding: 24px 24px 0; display: flex; flex-direction: column; gap: 24px; height: 844px; box-sizing: border-box;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <button type="button" id="exitBtn" class="icon-btn" aria-label="Exit workout" style="border: 1px solid var(--border); background: var(--surface);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div id="progressLabel" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);"></div>
+      <div style="width: 40px;"></div>
+    </div>
+
+    <div style="width: 100%; height: 4px; border-radius: 2px; background: var(--border);"></div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 12px;">
+      <div style="width: 100%; height: 180px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text-tertiary);">[exercise illustration]</div>
+      <div id="exerciseName" style="font-size: 24px; font-weight: 700; text-align: center;"></div>
+      <div id="setLabel" style="font-size: 14px; color: var(--text-secondary);"></div>
+    </div>
+
+    <div style="display: flex; gap: 14px;">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Reps</label>
+        <input type="number" id="repsInput" class="input-field" style="font-size: 20px; font-weight: 700; text-align: center;">
+      </div>
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Weight (kg)</label>
+        <input type="number" id="weightInput" class="input-field" style="font-size: 20px; font-weight: 700; text-align: center;">
+      </div>
+    </div>
+    <div id="invalidHint" style="font-size: 12px; color: var(--error); margin-top: -12px; display: none;">Enter reps and weight before saving this set.</div>
+    <div id="syncError" class="error-banner" style="display: none; justify-content: space-between;">
+      <span id="syncErrorText" style="display: flex; align-items: center; gap: 10px;"></span>
+      <button type="button" id="retryBtn" class="btn-text" style="font-size: 12px; font-weight: 700;">Retry</button>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="padding-bottom: 32px;">
+      <button type="button" id="actionBtn" class="btn-primary" style="width: 100%; border: none;"></button>
+    </div>
+
+  </div>
+
+  <div id="restOverlay" class="overlay" style="display: none; background: rgba(11,12,14,0.92); flex-direction: column; gap: 20px;">
+    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary);">Rest</div>
+    <div style="font-size: 56px; font-weight: 800; color: var(--lime);">00:45</div>
+    <div id="nextLabel" style="font-size: 14px; color: var(--text-secondary); text-align: center;"></div>
+    <button type="button" id="skipRestBtn" class="btn-secondary" style="width: auto; padding: 0 32px;">Skip</button>
+  </div>
+
+  <div id="exitOverlay" class="overlay" style="display: none; background: rgba(11,12,14,0.85);">
+    <div class="card" style="width: 100%; display: flex; flex-direction: column; gap: 16px; padding: 24px;">
+      <div style="font-size: 18px; font-weight: 700;">Exit workout?</div>
+      <div style="font-size: 14px; color: var(--text-secondary);">Your progress on this workout will not be saved.</div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+        <button type="button" id="keepTrainingBtn" class="btn-primary" style="border: none;">Keep Training</button>
+        <a href="Home.html" style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 12px; color: var(--error); font-size: 15px; font-weight: 600;">Exit Workout</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+  var FALLBACK_EXERCISES = [
+    { name: 'Bench Press', sets: 3, reps: 10, weight: 60 },
+    { name: 'Dumbbell Row', sets: 3, reps: 12, weight: 20 },
+    { name: 'Overhead Press', sets: 3, reps: 8, weight: 35 }
+  ];
+
+  var w = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+  if (!w) {
+    w = { exercises: FALLBACK_EXERCISES, exerciseIndex: 0, setIndex: 0, backendSessionId: null };
+    if (window.FitAI) window.FitAI.startWorkout({ title: 'Workout', duration: '', difficulty: '', exercises: FALLBACK_EXERCISES });
+  }
+  var state = {
+    exerciseIndex: w.exerciseIndex,
+    setIndex: w.setIndex,
+    reps: String(w.exercises[w.exerciseIndex].reps),
+    weight: String(w.exercises[w.exerciseIndex].weight),
+    syncing: false,
+    syncError: null
+  };
+
+  function exercises() {
+    var cw = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+    return cw ? cw.exercises : FALLBACK_EXERCISES;
+  }
+  function backendSessionId() {
+    var cw = window.FitAI ? window.FitAI.getCurrentWorkout() : null;
+    return cw ? cw.backendSessionId : null;
+  }
+  function isCurrentValid() {
+    var reps = Number(state.reps), weight = Number(state.weight);
+    return state.reps !== '' && reps > 0 && state.weight !== '' && weight >= 0;
+  }
+
+  var repsInput = document.getElementById('repsInput');
+  var weightInput = document.getElementById('weightInput');
+  repsInput.addEventListener('input', function () { state.reps = repsInput.value; render(); });
+  weightInput.addEventListener('input', function () { state.weight = weightInput.value; render(); });
+
+  function render() {
+    var exs = exercises();
+    var currentExercise = exs[state.exerciseIndex];
+    var isFinal = state.exerciseIndex === exs.length - 1 && state.setIndex === currentExercise.sets - 1;
+    var valid = isCurrentValid();
+
+    document.getElementById('progressLabel').textContent = 'Exercise ' + (state.exerciseIndex + 1) + ' of ' + exs.length;
+    document.getElementById('exerciseName').textContent = currentExercise.name;
+    document.getElementById('setLabel').textContent = 'Set ' + (state.setIndex + 1) + ' of ' + currentExercise.sets;
+    if (repsInput.value !== state.reps) repsInput.value = state.reps;
+    if (weightInput.value !== state.weight) weightInput.value = state.weight;
+    document.getElementById('invalidHint').style.display = valid ? 'none' : 'block';
+
+    var btn = document.getElementById('actionBtn');
+    btn.classList.toggle('btn-disabled', !valid);
+    btn.disabled = !valid || state.syncing;
+    if (state.syncing) {
+      btn.textContent = isFinal ? 'Completing workout…' : 'Saving set…';
+    } else {
+      btn.textContent = isFinal ? 'Complete Workout' : 'Save & Complete Set';
+    }
+
+    var syncBox = document.getElementById('syncError');
+    if (state.syncError) {
+      syncBox.style.display = 'flex';
+      document.getElementById('syncErrorText').textContent = state.syncError;
+    } else {
+      syncBox.style.display = 'none';
+    }
+  }
+
+  function advanceLocally() {
+    var result = window.FitAI.logCurrentSet(Number(state.reps), Number(state.weight));
+    if (!result || result.isFinal) return;
+    var nw = result.workout;
+    var nextEx = exercises()[nw.exerciseIndex];
+    state.exerciseIndex = nw.exerciseIndex;
+    state.setIndex = nw.setIndex;
+    state.reps = String(nextEx.reps);
+    state.weight = String(nextEx.weight);
+    state.syncing = false;
+    state.syncError = null;
+    showRest();
+    render();
+  }
+
+  function showRest() {
+    var exs = exercises();
+    var label = state.exerciseIndex < exs.length ? exs[state.exerciseIndex].name : 'Workout complete';
+    document.getElementById('nextLabel').textContent = 'Next: ' + label;
+    document.getElementById('restOverlay').style.display = 'flex';
+  }
+
+  async function completeSet() {
+    if (!isCurrentValid() || state.syncing) return;
+    var sid = backendSessionId();
+    if (!sid || !window.FitAISessions) { advanceLocally(); return; }
+    state.syncing = true; state.syncError = null; render();
+    var result = await window.FitAISessions.logSet(sid, { exercise_index: state.exerciseIndex, set_index: state.setIndex, reps: Number(state.reps), weight: Number(state.weight) });
+    if (result.ok || result.unconfigured) { advanceLocally(); return; }
+    state.syncing = false;
+    state.syncError = "Couldn't save that set — check your connection.";
+    render();
+  }
+
+  async function finish() {
+    if (!isCurrentValid() || state.syncing) return;
+    var sid = backendSessionId();
+    if (!sid || !window.FitAISessions) {
+      window.FitAI.logCurrentSet(Number(state.reps), Number(state.weight));
+      window.FitAI.completeWorkout();
+      window.location.href = 'WorkoutComplete.html';
+      return;
+    }
+    state.syncing = true; state.syncError = null; render();
+    var setResult = await window.FitAISessions.logSet(sid, { exercise_index: state.exerciseIndex, set_index: state.setIndex, reps: Number(state.reps), weight: Number(state.weight) });
+    if (!setResult.ok && !setResult.unconfigured) {
+      state.syncing = false; state.syncError = "Couldn't save that set — check your connection."; render();
+      return;
+    }
+    var completeResult = await window.FitAISessions.completeSession(sid);
+    if (completeResult.ok && completeResult.data && completeResult.data.session) {
+      window.FitAI.logCurrentSet(Number(state.reps), Number(state.weight));
+      window.FitAI.completeWorkoutFromServer(completeResult.data.session);
+      window.location.href = 'WorkoutComplete.html';
+      return;
+    }
+    if (completeResult.unconfigured) {
+      window.FitAI.logCurrentSet(Number(state.reps), Number(state.weight));
+      window.FitAI.completeWorkout();
+      window.location.href = 'WorkoutComplete.html';
+      return;
+    }
+    state.syncing = false; state.syncError = "Couldn't complete the workout — check your connection."; render();
+  }
+
+  document.getElementById('actionBtn').addEventListener('click', function () {
+    var exs = exercises();
+    var currentExercise = exs[state.exerciseIndex];
+    var isFinal = state.exerciseIndex === exs.length - 1 && state.setIndex === currentExercise.sets - 1;
+    if (isFinal) finish(); else completeSet();
+  });
+  document.getElementById('retryBtn').addEventListener('click', function () {
+    var exs = exercises();
+    var currentExercise = exs[state.exerciseIndex];
+    var isFinal = state.exerciseIndex === exs.length - 1 && state.setIndex === currentExercise.sets - 1;
+    state.syncError = null;
+    if (isFinal) finish(); else completeSet();
+  });
+  document.getElementById('skipRestBtn').addEventListener('click', function () {
+    document.getElementById('restOverlay').style.display = 'none';
+  });
+  document.getElementById('exitBtn').addEventListener('click', function () {
+    document.getElementById('exitOverlay').style.display = 'flex';
+  });
+  document.getElementById('keepTrainingBtn').addEventListener('click', function () {
+    document.getElementById('exitOverlay').style.display = 'none';
+  });
+
+  render();
+  (async function checkAuth() {
+    if (window.FitAIAuth) await window.FitAIAuth.guardPage();
+  })();
+</script>
+</body>
+</html>

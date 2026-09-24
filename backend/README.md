@@ -1,13 +1,14 @@
 # FitAI Backend
 
-Node.js/Express/SQLite backend for FitAI — AI-Powered Fitness & Workout
-Companion. Implements authentication, profile, the workout catalog,
-workout sessions and set logging, progress, and server-side AI workout
-generation.
+Node.js/Express/PostgreSQL backend for FitAI — AI-Powered Fitness &
+Workout Companion. Implements authentication, profile, the workout
+catalog, workout sessions and set logging, progress, and server-side AI
+workout generation.
 
 **Status: deployment-ready backend configuration. Not currently deployed
 anywhere.** Everything documented below has been run and verified
-locally only.
+locally, against a real PostgreSQL instance — not yet against a live
+Neon database (no Neon credentials have been provided to this project).
 
 ## What's implemented
 
@@ -35,37 +36,46 @@ Every authenticated route derives its user from the session cookie only
 — no endpoint anywhere accepts a client-supplied `user_id`, and
 ownership is enforced on every session/profile/AI-generation lookup.
 
+## Database
+
+**PostgreSQL, via the `pg` driver — no SQLite fallback exists.** The
+server refuses to start if `DATABASE_URL` isn't set. Designed for
+[Neon](https://neon.tech) but works against any standard PostgreSQL
+instance. Connection SSL is inferred from the connection string itself
+(`?sslmode=require` enables it) rather than hardcoded, so the same code
+works against Neon (SSL required) and local/plain Postgres for
+development (no SSL) without a config flag.
+
+Schema initialization (`CREATE TABLE IF NOT EXISTS` for all 8 tables)
+and the catalog seed both run automatically and idempotently on server
+startup — safe to run repeatedly against the same database, and safe
+against an already-populated one.
+
 ## Project structure
 
 ```
 backend/
   src/
     server.js         entrypoint (see package.json "main"/"start")
-    db.js             SQLite connection, schema init, safe migrations, seed
-    schema.sql        table definitions
-    seed.js           idempotent catalog seed data
-    auth.js           password hashing, session tokens
-    profile.js        profile validation + persistence
-    catalog.js        workout catalog queries
+    db.js              PostgreSQL pool, schema init, transaction helper
+    schema.sql         table definitions (PostgreSQL)
+    seed.js            idempotent catalog seed data
+    auth.js            password hashing, session tokens
+    profile.js         profile validation + persistence
+    catalog.js         workout catalog queries
     sessions.js        workout session / set logging / progress logic
-    aiProvider.js     real AI provider call (Anthropic Messages API)
-    aiValidate.js     strict AI-output validation/normalization
-    aiGenerations.js  ai_generations persistence
+    aiProvider.js      real AI provider call (Anthropic Messages API)
+    aiValidate.js      strict AI-output validation/normalization
+    aiGenerations.js   ai_generations persistence
   package.json
   package-lock.json
   .env.example
   .gitignore
 ```
 
-The real entrypoint is `src/server.js` — `package.json`'s `main` and
-`start`/`dev` scripts already point there, so `npm start` works correctly
-from `backend/` without any path changes.
-
 ## Deployment checklist
 
-**1. Node version:** 18+ (`package.json`'s `engines` field; needed for
-native `crypto.randomUUID` and to match `better-sqlite3`'s prebuilt
-binaries).
+**1. Node version:** 18+ (`package.json`'s `engines` field).
 
 **2. Install:**
 ```
@@ -78,21 +88,17 @@ these directly on your hosting platform):
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `PORT` | No (defaults 4000) | port the server listens on |
-| `DB_FILE` | Recommended in prod | SQLite file path — see persistence warning below |
+| `DATABASE_URL` | **Yes** | PostgreSQL connection string, e.g. from Neon — `postgresql://user:pass@host/db?sslmode=require`. No SQLite fallback exists. |
 | `NODE_ENV` | No | informational only |
 | `ALLOWED_ORIGIN` | Yes, for browser use | exact origin allowed to call this API with credentials (e.g. the Artifact frontend's origin) |
 | `COOKIE_SECURE` | No | `true` to force the Secure cookie flag (auto-forced on anyway if `COOKIE_SAMESITE=none`) |
 | `COOKIE_SAMESITE` | Yes, for cross-origin | `lax` (default, same-origin/dev) or `none` (required for the current Artifact-hosted frontend, a different origin, to receive the session cookie at all) |
 | `AI_API_KEY` | Yes, for real AI generation | server-side only; without it `/ai/generate-workout` returns a clean, safe error and the frontend uses its clearly-labeled offline fallback instead |
 
-**4. Database persistence — read this before deploying.** SQLite is a
-single file (`DB_FILE`, default `./data/fitai.sqlite`). If your hosting
-platform's filesystem is ephemeral (many container/serverless platforms
-wipe local disk on every redeploy or restart), **all data will be lost**
-on the next deploy. Point `DB_FILE` at a persistent volume/disk the
-platform provides before real users register. Do not assume the default
-filesystem is production-safe without checking your specific platform's
-docs.
+**4. Database persistence:** handled by your Postgres provider (e.g.
+Neon), not by this application — unlike the earlier SQLite version,
+there's no local file to lose on redeploy. Still confirm your Neon
+project/branch is the one you intend to keep using in production.
 
 **5. HTTPS is required in production.** Cross-origin cookies
 (`COOKIE_SAMESITE=none`) are rejected by browsers unless sent over
@@ -105,7 +111,8 @@ npm start
 ```
 
 **7. Health check URL:** `GET /health` → `{"ok":true,"service":"fitai-backend"}`,
-no authentication required.
+no authentication required, no database access — always answers even
+if `DATABASE_URL` is unreachable.
 
 **8. Connecting the frontend:** the frontend never hardcodes a backend
 URL. Once deployed with `COOKIE_SAMESITE=none`, `COOKIE_SECURE`
@@ -129,19 +136,16 @@ curl -i -b cookies.txt https://your-api-host/auth/session   # should show authen
 ```
 
 **10. Data safety on deploy:** this codebase never runs a destructive
-migration or drops a table — `db.js` only ever uses
-`CREATE TABLE IF NOT EXISTS` plus one additive, idempotent
-`ALTER TABLE ... ADD COLUMN` (guarded by a `PRAGMA table_info` check)
-for the `ai_generation_id` column. Deploying against an existing
-production database will not touch any existing data.
+migration or drops a table — schema init only ever uses
+`CREATE TABLE IF NOT EXISTS`. Deploying against an existing production
+database will not touch any existing data.
 
 **11. Frontend runtime note:** this backend is independently deployable
-to any Node host. The current FitAI frontend (the `.dc.html` boards) is
-**not** independently deployable — it depends on Claude's Artifact
-runtime (`support.js`, the `DCLogic`/`<x-dc>` templating system) and is
-not currently a standalone static website. See the repository root
-README for details. Deploying this backend does not require or imply
-the frontend can move off Artifact hosting.
+to any Node host with a reachable Postgres connection. The current
+FitAI frontend (the `.dc.html` boards) is **not** independently
+deployable — it depends on Claude's Artifact runtime (`support.js`, the
+`DCLogic`/`<x-dc>` templating system) and is not currently a standalone
+static website. See the repository root README for details.
 
 ---
 
@@ -178,8 +182,8 @@ the frontend can move off Artifact hosting.
 - Every authenticated endpoint derives the user from the session
   cookie only; no endpoint accepts or trusts a client-supplied
   `user_id`.
-- `AI_API_KEY` is read server-side only and never appears in any
-  response.
+- `AI_API_KEY` and `DATABASE_URL` are read server-side only and never
+  appear in any response.
 - All unexpected errors return a generic
   `{"error":"internal server error"}` (logged server-side only);
   malformed request bodies and unknown routes also return clean JSON,

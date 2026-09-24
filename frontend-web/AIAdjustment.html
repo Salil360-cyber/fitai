@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Adjustment</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 92px; overflow-y: auto; padding: 24px;">
+
+    <a href="AIGeneratedWorkout.html" aria-label="Cancel" class="icon-btn" style="margin-bottom: 20px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </a>
+
+    <h1 style="margin: 0 0 6px; font-size: 24px; font-weight: 700;">Adjust your workout</h1>
+    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">Change any input and regenerate.</div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div><div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">Goal</div><div id="goalOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+      <div><div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">Available Time</div><div id="timeOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+      <div><div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">Fitness Level</div><div id="levelOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+      <div><div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">Equipment</div><div id="equipmentOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div></div>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--border); padding: 16px 24px 24px; box-sizing: border-box;">
+    <button type="button" id="regenerateBtn" class="btn-primary btn-disabled" style="width: 100%; border: none;">Regenerate</button>
+  </div>
+
+</div>
+<script>
+  var saved = window.FitAI ? window.FitAI.get().aiCoach : { goal: null, time: null, level: null, equipment: {} };
+  var s = { goal: saved.goal, time: saved.time, level: saved.level, equipment: saved.equipment || {} };
+
+  var GROUPS = {
+    goal: { el: 'goalOptions', multi: false, items: [{ id: 'lose', label: 'Lose weight' }, { id: 'build', label: 'Build muscle' }, { id: 'endurance', label: 'Improve endurance' }, { id: 'general', label: 'General fitness' }] },
+    time: { el: 'timeOptions', multi: false, items: [{ id: '15', label: '15 min' }, { id: '30', label: '30 min' }, { id: '45', label: '45 min' }, { id: '60', label: '60 min' }] },
+    level: { el: 'levelOptions', multi: false, items: [{ id: 'beginner', label: 'Beginner' }, { id: 'intermediate', label: 'Intermediate' }, { id: 'advanced', label: 'Advanced' }] },
+    equipment: { el: 'equipmentOptions', multi: true, items: [{ id: 'bodyweight', label: 'Bodyweight only' }, { id: 'dumbbells', label: 'Dumbbells' }, { id: 'bands', label: 'Resistance Bands' }, { id: 'gym', label: 'Full Gym' }] }
+  };
+
+  function render() {
+    Object.keys(GROUPS).forEach(function (field) {
+      var g = GROUPS[field];
+      var el = document.getElementById(g.el);
+      el.innerHTML = '';
+      g.items.forEach(function (it) {
+        var isSel = g.multi ? !!s.equipment[it.id] : s[field] === it.id;
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (isSel ? ' selected' : '');
+        chip.style.height = '42px'; chip.style.fontSize = '13px';
+        chip.textContent = it.label;
+        chip.addEventListener('click', function () {
+          if (g.multi) {
+            s.equipment[it.id] = !s.equipment[it.id];
+            if (window.FitAI) window.FitAI.toggleEquipment(it.id);
+          } else {
+            s[field] = it.id;
+            if (window.FitAI) window.FitAI.setAICoachField(field, it.id);
+          }
+          render();
+        });
+        el.appendChild(chip);
+      });
+    });
+    var hasEquipment = Object.values(s.equipment).some(Boolean);
+    var canRegenerate = !!s.goal && !!s.time && !!s.level && hasEquipment;
+    var btn = document.getElementById('regenerateBtn');
+    btn.classList.toggle('btn-disabled', !canRegenerate);
+    btn.disabled = !canRegenerate;
+  }
+  render();
+
+  function normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || 'Built for your updated goal, time, and level.',
+      exercises: workout.exercises.map(function (ex) { return { name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec }; }),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+
+  document.getElementById('regenerateBtn').addEventListener('click', async function () {
+    var hasEquipment = Object.values(s.equipment).some(Boolean);
+    if (!(s.goal && s.time && s.level && hasEquipment)) return;
+    this.textContent = 'Regenerating…'; this.disabled = true;
+    var inputs = { goal: s.goal, time: s.time, level: s.level, equipment: s.equipment };
+    if (window.FitAIAI) {
+      var realInput = { goal: s.goal, duration_min: Number(s.time), fitness_level: s.level, equipment: Object.keys(s.equipment).filter(function (k) { return s.equipment[k]; }) };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        window.location.href = 'AIGeneratedWorkout.html';
+        return;
+      }
+    }
+    if (window.FitAI) {
+      var local = window.FitAI.generateWorkout(inputs, Math.floor(Math.random() * 1000));
+      window.FitAI.patch({ generatedWorkout: normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    window.location.href = 'AIGeneratedWorkout.html';
+  });
+
+  (async function checkAuth() { if (window.FitAIAuth) await window.FitAIAuth.guardPage(); })();
+</script>
+</body>
+</html>

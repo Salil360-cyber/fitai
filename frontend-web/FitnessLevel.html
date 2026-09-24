@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Fitness Level</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <a href="FitnessGoal.html" aria-label="Back" class="icon-btn" style="margin-bottom: 20px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+  </a>
+
+  <div class="progress-dots" style="margin-bottom: 24px;">
+    <div class="dot-fill"></div><div class="dot-fill"></div><div class="dot-empty"></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px;">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700;">What's your experience level?</h1>
+    <div style="font-size: 15px; color: var(--text-secondary);">This helps us pace your workouts right.</div>
+  </div>
+
+  <div id="options" style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;"></div>
+
+  <a href="Preferences.html" id="continueBtn" class="btn-primary btn-disabled" style="margin-top: 20px; pointer-events: none;">Continue</a>
+
+</div>
+<script>
+  var LEVELS = [
+    { id: 'beginner', label: 'Beginner', desc: 'New to structured training' },
+    { id: 'intermediate', label: 'Intermediate', desc: 'Training consistently for 6+ months' },
+    { id: 'advanced', label: 'Advanced', desc: 'Years of consistent, structured training' }
+  ];
+  var optionsEl = document.getElementById('options');
+  var continueBtn = document.getElementById('continueBtn');
+  var saved = window.FitAI ? window.FitAI.get().profile.fitnessLevel : null;
+  var selected = (LEVELS.find(function (l) { return l.label === saved; }) || {}).id || null;
+
+  function render() {
+    optionsEl.innerHTML = '';
+    LEVELS.forEach(function (l) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var isSel = selected === l.id;
+      btn.style.cssText = 'width:100%;box-sizing:border-box;display:block;text-align:left;padding:18px;border-radius:14px;' +
+        (isSel ? 'background:var(--surface-2);border:1.5px solid var(--lime);' : 'background:var(--surface);border:1.5px solid var(--border);');
+      btn.innerHTML = '<div style="font-size:16px;font-weight:600;color:var(--text-primary);">' + l.label + '</div>' +
+        '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">' + l.desc + '</div>';
+      btn.addEventListener('click', function () {
+        selected = l.id;
+        if (window.FitAI) window.FitAI.setProfileField('fitnessLevel', l.label);
+        if (window.FitAIProfile) window.FitAIProfile.updateProfile({ fitness_level: l.label });
+        render();
+      });
+      optionsEl.appendChild(btn);
+    });
+    var hasSelection = !!selected;
+    continueBtn.classList.toggle('btn-disabled', !hasSelection);
+    continueBtn.style.pointerEvents = hasSelection ? 'auto' : 'none';
+  }
+  render();
+</script>
+</body>
+</html>

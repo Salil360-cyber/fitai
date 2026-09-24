@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Log In</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <a href="Welcome.html" aria-label="Back" class="icon-btn" style="margin-bottom: 28px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+  </a>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px;">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700;">Log in</h1>
+    <div style="font-size: 15px; color: var(--text-secondary);">Welcome back.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <label for="email" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" class="input-field">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <label for="password" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Password</label>
+      <input id="password" type="password" placeholder="Your password" class="input-field">
+    </div>
+    <div id="errorBox" class="error-banner" style="display: none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <span id="errorText"></span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 24px;">
+    <button type="button" id="submitBtn" class="btn-primary btn-disabled" style="width: 100%; border: none;">Log In</button>
+    <div style="text-align: center; font-size: 14px; color: var(--text-secondary);">Don't have an account? <a href="CreateAccount.html" style="color: var(--text-primary); font-weight: 600; text-decoration: underline;">Create one</a></div>
+  </div>
+
+</div>
+<script>
+  var emailEl = document.getElementById('email');
+  var passwordEl = document.getElementById('password');
+  var submitBtn = document.getElementById('submitBtn');
+  var errorBox = document.getElementById('errorBox');
+  var errorText = document.getElementById('errorText');
+  var submitting = false;
+
+  function updateButtonState() {
+    var hasInput = emailEl.value.length > 0 && passwordEl.value.length > 0;
+    submitBtn.classList.toggle('btn-disabled', !hasInput);
+  }
+  emailEl.addEventListener('input', updateButtonState);
+  passwordEl.addEventListener('input', updateButtonState);
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorBox.style.display = 'flex';
+  }
+
+  async function submit() {
+    if (submitting) return;
+    var hasInput = emailEl.value.length > 0 && passwordEl.value.length > 0;
+    if (!hasInput) return;
+    submitting = true;
+    submitBtn.textContent = 'Logging in…';
+    errorBox.style.display = 'none';
+
+    var params = new URLSearchParams(window.location.search);
+    var redirectTo = params.get('redirect') || 'Home.html';
+
+    if (!window.FitAIAuth) {
+      showError('Login service is not available.');
+      submitting = false;
+      submitBtn.textContent = 'Log In';
+      return;
+    }
+    var result = await window.FitAIAuth.login(emailEl.value, passwordEl.value);
+    if (result.offline) {
+      showError('Could not reach the backend right now — continuing with the local prototype.');
+      window.location.href = redirectTo;
+      return;
+    }
+    if (!result.ok) {
+      var msg = (result.data && result.data.error) || 'Invalid email or password.';
+      showError(msg);
+      submitting = false;
+      submitBtn.textContent = 'Log In';
+      return;
+    }
+    if (window.FitAIProfile && window.FitAI) {
+      var profileResult = await window.FitAIProfile.getProfile();
+      if (profileResult.ok && profileResult.data && profileResult.data.profile) {
+        var p = profileResult.data.profile;
+        window.FitAI.setProfileField('name', p.name);
+        window.FitAI.setProfileField('email', p.email);
+        if (p.fitness_goal) window.FitAI.setProfileField('fitnessGoal', p.fitness_goal);
+        if (p.fitness_level) window.FitAI.setProfileField('fitnessLevel', p.fitness_level);
+      }
+    } else if (window.FitAI && result.data && result.data.user) {
+      window.FitAI.setProfileField('email', result.data.user.email);
+    }
+    window.location.href = redirectTo;
+  }
+  submitBtn.addEventListener('click', submit);
+</script>
+</body>
+</html>

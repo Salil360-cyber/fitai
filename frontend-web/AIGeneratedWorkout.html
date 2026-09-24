@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — AI Generated Workout</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="overflow: hidden;">
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 156px; overflow-y: auto; padding: 24px;">
+
+    <a href="AICoach.html" aria-label="Back" class="icon-btn" style="margin-bottom: 20px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+
+    <div id="empty" style="display: none; flex-direction: column; align-items: center; gap: 12px; padding: 48px 16px; text-align: center;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div style="font-size: 15px; font-weight: 600;">No generated workout yet</div>
+      <div style="font-size: 13px; color: var(--text-secondary);">Go back to AI Coach to generate one.</div>
+    </div>
+
+    <div id="content">
+      <h1 id="title" style="margin: 0 0 6px; font-size: 24px; font-weight: 700;"></h1>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+        <div id="durationChip" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
+        <div id="difficultyChip" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
+        <div id="categoryChip" style="display:none;font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
+      </div>
+      <div id="badge" style="margin-bottom: 18px; font-size: 10px; font-weight: 700; border-radius: 999px; padding: 3px 8px; display: inline-block;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 20px;">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime);">Why this workout · research validation required</div>
+        <div id="rationale" style="font-size: 13px; color: var(--text-secondary); line-height: 19px;"></div>
+      </div>
+
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px;">Exercises</div>
+      <div id="exerciseList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
+    <div id="errorBanner" class="error-banner" style="display: none; margin-top: 16px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <span id="errorText" style="font-size: 12px;"></span>
+    </div>
+
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--border); padding: 16px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; gap: 10px;">
+      <a href="AIAdjustment.html" class="btn-secondary" style="flex-grow: 1; height: 50px;">Edit / Adjust</a>
+      <button type="button" id="regenerateBtn" class="btn-secondary" style="flex-grow: 1; height: 50px; border: 1.5px solid var(--border); background: transparent;">Regenerate</button>
+    </div>
+    <button type="button" id="startBtn" class="btn-primary" style="width: 100%; border: none;">Start Workout</button>
+  </div>
+
+</div>
+<script>
+  var regenerating = false, starting = false;
+
+  function baseInputs() {
+    var st = window.FitAI ? window.FitAI.get() : { aiCoach: {} };
+    return st.aiCoach || { goal: 'general', time: '30', level: 'intermediate', equipment: {} };
+  }
+  function normalizeGenerated(workout, meta) {
+    return {
+      title: workout.title || workout.name,
+      duration: workout.duration || (workout.duration_min + ' min'),
+      difficulty: workout.difficulty,
+      category: workout.category || null,
+      rationale: workout.rationale || 'Built for your selected goal, time, and level.',
+      exercises: workout.exercises.map(function (ex) { return { name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight || 0, rest_sec: ex.rest_sec }; }),
+      aiGenerationId: meta.aiGenerationId || null,
+      isLocalFallback: !!meta.isLocalFallback
+    };
+  }
+
+  var seed = 0;
+  async function regenerate() {
+    if (regenerating) return;
+    regenerating = true;
+    document.getElementById('regenerateBtn').textContent = 'Regenerating…';
+    document.getElementById('errorBanner').style.display = 'none';
+    var inputs = baseInputs();
+    if (window.FitAIAI) {
+      var realInput = { goal: inputs.goal, duration_min: Number(inputs.time), fitness_level: inputs.level, equipment: Object.keys(inputs.equipment || {}).filter(function (k) { return inputs.equipment[k]; }) };
+      var result = await window.FitAIAI.generateWorkout(realInput);
+      if (result.ok && result.data && result.data.workout) {
+        var normalized = normalizeGenerated(result.data.workout, { aiGenerationId: result.data.generation_id, isLocalFallback: false });
+        if (window.FitAI) window.FitAI.patch({ generatedWorkout: normalized });
+        regenerating = false;
+        document.getElementById('regenerateBtn').textContent = 'Regenerate';
+        renderFromStore();
+        return;
+      }
+      if (!result.unconfigured) {
+        document.getElementById('errorBanner').style.display = 'flex';
+        document.getElementById('errorText').textContent = 'AI service unavailable — regenerated with the offline builder instead.';
+      }
+    }
+    seed++;
+    if (window.FitAI) {
+      var local = window.FitAI.generateWorkout(inputs, seed);
+      window.FitAI.patch({ generatedWorkout: normalizeGenerated(local, { isLocalFallback: true }) });
+    }
+    regenerating = false;
+    document.getElementById('regenerateBtn').textContent = 'Regenerate';
+    renderFromStore();
+  }
+
+  async function start() {
+    if (starting) return;
+    starting = true;
+    document.getElementById('startBtn').textContent = 'Starting workout…';
+    var st = window.FitAI ? window.FitAI.get() : {};
+    var w = st.generatedWorkout;
+    if (!w) return;
+    var local = { id: 'ai-' + Date.now(), title: w.title, duration: w.duration, difficulty: w.difficulty, exercises: w.exercises };
+    if (window.FitAI) window.FitAI.startWorkout(local);
+    if (w.aiGenerationId && window.FitAISessions) {
+      var result = await window.FitAISessions.startAiSession(w.aiGenerationId);
+      if (result.ok && result.data && result.data.session && window.FitAI) {
+        window.FitAI.setCurrentWorkoutBackendSessionId(result.data.session.id);
+      }
+    }
+    window.location.href = 'ActiveWorkout.html';
+  }
+
+  function renderFromStore() {
+    var st = window.FitAI ? window.FitAI.get() : {};
+    var w = st.generatedWorkout;
+    if (!w) {
+      document.getElementById('empty').style.display = 'flex';
+      document.getElementById('content').style.display = 'none';
+      return;
+    }
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('title').textContent = w.title;
+    document.getElementById('durationChip').textContent = w.duration;
+    document.getElementById('difficultyChip').textContent = w.difficulty;
+    var catChip = document.getElementById('categoryChip');
+    if (w.category) { catChip.style.display = 'block'; catChip.textContent = w.category; } else { catChip.style.display = 'none'; }
+    var badge = document.getElementById('badge');
+    if (w.isLocalFallback) {
+      badge.textContent = 'OFFLINE BUILDER — NOT LIVE AI';
+      badge.style.cssText += 'color:var(--text-tertiary);background:var(--surface-2);';
+    } else {
+      badge.textContent = 'AI-GENERATED';
+      badge.style.cssText += 'color:var(--bg);background:var(--lime);';
+    }
+    document.getElementById('rationale').textContent = w.rationale;
+    var list = document.getElementById('exerciseList');
+    list.innerHTML = '';
+    (w.exercises || []).forEach(function (ex) {
+      var row = document.createElement('div');
+      row.className = 'card';
+      row.style.cssText += 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;';
+      var setsLabel = ex.sets + ' × ' + ex.reps + ((ex.rest_sec !== undefined && ex.rest_sec !== null) ? ' · ' + ex.rest_sec + 's rest' : '');
+      row.innerHTML = '<div style="font-size:15px;font-weight:600;">' + ex.name + '</div><div style="font-size:13px;color:var(--text-secondary);">' + setsLabel + '</div>';
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('regenerateBtn').addEventListener('click', regenerate);
+  document.getElementById('startBtn').addEventListener('click', start);
+
+  renderFromStore();
+  (async function checkAuth() { if (window.FitAIAuth) await window.FitAIAuth.guardPage(); })();
+</script>
+</body>
+</html>

@@ -1,26 +1,64 @@
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, '..', 'data', 'fitai.sqlite');
-fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+const connectionString = process.env.DATABASE_URL;
 
-const db = new Database(DB_FILE);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// Neon requires SSL. Plain local Postgres (used for development/testing)
+// typically doesn't have it enabled. Rather than hardcoding either
+// assumption, infer it from the connection string itself.
+const wantsSSL = !!connectionString && /sslmode=require/i.test(connectionString);
 
-const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-db.exec(schema);
+const pool = new Pool({
+  connectionString,
+  ssl: wantsSSL ? { rejectUnauthorized: false } : false
+});
 
-// Phase 2.4: workout_sessions already existed on disk from Phase 2.3, so
-// CREATE TABLE IF NOT EXISTS above won't add a new column to it — do that
-// safely, only if it isn't already there (idempotent across restarts).
-const workoutSessionColumns = db.prepare('PRAGMA table_info(workout_sessions)').all().map((c) => c.name);
-if (!workoutSessionColumns.includes('ai_generation_id')) {
-  db.exec('ALTER TABLE workout_sessions ADD COLUMN ai_generation_id TEXT REFERENCES ai_generations(id)');
+pool.on('error', (err) => {
+  // Idle client errors (e.g. a dropped connection) must not crash the
+  // whole process — log and let the pool recover on the next query.
+  console.error('[fitai-backend] unexpected Postgres pool error:', err.message);
+});
+
+let initialized = false;
+
+// Runs schema creation + the safe catalog seed. Must be awaited once at
+// startup before the server accepts requests — see server.js. Not run
+// automatically at require() time, since pg connections are inherently
+// asynchronous and a plain `require('./db')` needs to stay synchronous.
+async function initSchema() {
+  if (initialized) return;
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL is not set. FitAI requires a PostgreSQL connection string ' +
+      '(see .env.example) — there is no SQLite fallback.'
+    );
+  }
+  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  await pool.query(schema);
+
+  const { seedIfEmpty } = require('./seed');
+  await seedIfEmpty(pool);
+
+  initialized = true;
 }
 
-const { seedIfEmpty } = require('./seed');
-seedIfEmpty(db);
+// Runs fn(client) inside a real BEGIN/COMMIT/ROLLBACK transaction.
+// Used where more than one write must succeed or fail together (e.g.
+// creating a user and its profile row during registration).
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
 
-module.exports = db;
+module.exports = { pool, initSchema, withTransaction };

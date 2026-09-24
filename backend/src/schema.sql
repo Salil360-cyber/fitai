@@ -1,11 +1,20 @@
--- FitAI — Database Schema
+-- FitAI — Database Schema (PostgreSQL)
 -- Auth, profile, workout catalog, workout sessions/sets, and AI generations.
+--
+-- Timestamp columns are TEXT storing app-generated ISO-8601 strings
+-- (new Date().toISOString()) rather than TIMESTAMPTZ with a SQL-level
+-- default. This is a deliberate choice, not an oversight: the API has
+-- always returned these fields as plain ISO strings (e.g. in
+-- POST /auth/register's response), and node-postgres would otherwise
+-- auto-parse a TIMESTAMPTZ column into a JS Date object on read,
+-- silently changing every response shape that includes one. Keeping
+-- them TEXT preserves the existing API contract exactly.
 
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,                 -- uuid, generated at insert time
+  id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  created_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
@@ -17,23 +26,19 @@ CREATE TABLE IF NOT EXISTS profiles (
   preferences TEXT NOT NULL DEFAULT '[]'   -- JSON array, e.g. ["strength","cardio"]
 );
 
--- Opaque server-side session tokens (not JWTs) — the token itself is the
--- cookie value; nothing about the user is decodable from it client-side.
+-- Opaque server-side session tokens (not JWTs).
 CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
--- Phase 2.2 — Workout Catalog.
--- is_recommended is a small addition beyond the literal field list given
--- in the Phase 2.2 spec: the existing Workout Discovery UI has a
--- "Recommended" filter chip that cuts across categories (it is not a
--- category itself), so a boolean flag is required to preserve that
--- existing filter behavior without inventing a new catalog concept.
+-- Workout Catalog. is_recommended is a boolean flag the existing
+-- Workout Discovery UI's "Recommended" filter chip relies on — it cuts
+-- across categories, so it can't be derived from `category` alone.
 CREATE TABLE IF NOT EXISTS workouts (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -41,7 +46,7 @@ CREATE TABLE IF NOT EXISTS workouts (
   difficulty TEXT NOT NULL,
   category TEXT NOT NULL,
   image_url TEXT,
-  is_recommended INTEGER NOT NULL DEFAULT 0
+  is_recommended BOOLEAN NOT NULL DEFAULT false
 );
 CREATE INDEX IF NOT EXISTS idx_workouts_category ON workouts(category);
 CREATE INDEX IF NOT EXISTS idx_workouts_is_recommended ON workouts(is_recommended);
@@ -57,7 +62,23 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
 );
 CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout_id ON workout_exercises(workout_id);
 
--- Phase 2.3 — Workout Sessions + Set Logging + Progress.
+-- ai_generations must exist before workout_sessions references it below.
+CREATE TABLE IF NOT EXISTS ai_generations (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  input_json TEXT NOT NULL,
+  output_json TEXT,
+  status TEXT NOT NULL CHECK (status IN ('generated', 'failed')),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_generations_user_id ON ai_generations(user_id);
+
+-- Workout Sessions + Set Logging + Progress.
+-- ai_generation_id is declared directly here (rather than via a
+-- separate migration-only ALTER TABLE, as the SQLite version needed for
+-- an already-existing table): Neon/Postgres starts from an empty
+-- database, so there is no pre-existing workout_sessions table to
+-- migrate around — a clean CREATE TABLE is simpler and equally safe.
 CREATE TABLE IF NOT EXISTS workout_sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -67,7 +88,8 @@ CREATE TABLE IF NOT EXISTS workout_sessions (
   status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')) DEFAULT 'in_progress',
   started_at TEXT NOT NULL,
   completed_at TEXT,
-  duration_min INTEGER
+  duration_min INTEGER,
+  ai_generation_id TEXT REFERENCES ai_generations(id)
 );
 CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_id ON workout_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_workout_sessions_status ON workout_sessions(status);
@@ -81,26 +103,9 @@ CREATE TABLE IF NOT EXISTS workout_sets (
   set_index INTEGER NOT NULL,
   reps INTEGER NOT NULL,
   weight INTEGER NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  created_at TEXT NOT NULL,
   -- Duplicate-submission protection (retries/double-clicks): the same
   -- exercise+set within a session can only be recorded once.
   UNIQUE (session_id, exercise_index, set_index)
 );
 CREATE INDEX IF NOT EXISTS idx_workout_sets_session_id ON workout_sets(session_id);
-
--- Phase 2.4 — Real AI Workout Generation.
--- input_json/output_json are the exact request sent to the provider and
--- the normalized (validated) workout returned — never the provider's raw
--- prose, never secrets. workout_sessions.ai_generation_id (added via a
--- safe ALTER in db.js, since that table already exists on disk from
--- earlier phases) lets an AI-sourced session resolve its authoritative
--- exercise list the same way a catalog session resolves via workout_id.
-CREATE TABLE IF NOT EXISTS ai_generations (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  input_json TEXT NOT NULL,
-  output_json TEXT,
-  status TEXT NOT NULL CHECK (status IN ('generated', 'failed')),
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
-CREATE INDEX IF NOT EXISTS idx_ai_generations_user_id ON ai_generations(user_id);

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const crypto = require('crypto');
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const auth = require('./auth');
@@ -24,6 +25,14 @@ app.use((err, req, res, next) => {
 });
 
 app.use(cookieParser());
+
+// Serves the plain-HTML frontend (frontend-web/, a sibling of backend/)
+// from this same Express app/service — no second server, no new
+// dependency. Frontend and API are now same-origin in production, which
+// is why ALLOWED_ORIGIN below becomes optional for that same-origin
+// case (it's still honored for any other origin that calls the API
+// directly, e.g. the Claude Artifact-hosted version, unchanged).
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend-web')));
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '';
 if (ALLOWED_ORIGIN) {
@@ -66,14 +75,19 @@ function clearSessionCookie(res) {
 
 // Derives req.user from the auth-session cookie; never trusts a
 // client-supplied user_id anywhere in this file.
-function requireAuth(req, res, next) {
-  const token = req.cookies[COOKIE_NAME];
-  const user = auth.getSessionUser(token);
-  if (!user) {
-    return res.status(401).json({ error: 'authentication required' });
+async function requireAuth(req, res, next) {
+  try {
+    const token = req.cookies[COOKIE_NAME];
+    const user = await auth.getSessionUser(token);
+    if (!user) {
+      return res.status(401).json({ error: 'authentication required' });
+    }
+    req.user = user;
+    next();
+  } catch (e) {
+    console.error('[fitai-backend] auth check failed:', e);
+    res.status(500).json({ error: 'internal server error' });
   }
-  req.user = user;
-  next();
 }
 
 // Wraps an async route handler so a thrown/rejected error reaches the
@@ -104,7 +118,7 @@ app.post('/auth/register', safe(async (req, res) => {
     return res.status(400).json({ error: 'password must be at least 8 characters' });
   }
 
-  const existing = auth.findUserByEmail(email.toLowerCase());
+  const existing = await auth.findUserByEmail(email.toLowerCase());
   if (existing) {
     return res.status(409).json({ error: 'an account with this email already exists' });
   }
@@ -112,16 +126,15 @@ app.post('/auth/register', safe(async (req, res) => {
   const id = crypto.randomUUID();
   const passwordHash = await auth.hashPassword(password);
 
-  const tx = db.transaction(() => {
-    auth.createUser({ id, email: email.toLowerCase(), passwordHash });
-    auth.createProfile({ userId: id, name: name.trim() });
+  await db.withTransaction(async (client) => {
+    await auth.createUser({ id, email: email.toLowerCase(), passwordHash }, client);
+    await auth.createProfile({ userId: id, name: name.trim() }, client);
   });
-  tx();
 
-  const { token, expiresAt } = auth.createSession(id);
+  const { token, expiresAt } = await auth.createSession(id);
   setSessionCookie(res, token, expiresAt);
 
-  return res.status(201).json({ user: auth.safeUser(auth.findUserById(id)) });
+  return res.status(201).json({ user: auth.safeUser(await auth.findUserById(id)) });
 }));
 
 // --- POST /auth/login ---
@@ -131,7 +144,7 @@ app.post('/auth/login', safe(async (req, res) => {
     return res.status(400).json({ error: 'email and password are required' });
   }
 
-  const user = auth.findUserByEmail(email.toLowerCase());
+  const user = await auth.findUserByEmail(email.toLowerCase());
   if (!user) {
     return res.status(401).json({ error: 'invalid email or password' });
   }
@@ -140,7 +153,7 @@ app.post('/auth/login', safe(async (req, res) => {
     return res.status(401).json({ error: 'invalid email or password' });
   }
 
-  const { token, expiresAt } = auth.createSession(user.id);
+  const { token, expiresAt } = await auth.createSession(user.id);
   setSessionCookie(res, token, expiresAt);
   return res.status(200).json({ user: auth.safeUser(user) });
 }));
@@ -148,7 +161,7 @@ app.post('/auth/login', safe(async (req, res) => {
 // --- GET /auth/session ---
 app.get('/auth/session', safe(async (req, res) => {
   const token = req.cookies[COOKIE_NAME];
-  const user = auth.getSessionUser(token);
+  const user = await auth.getSessionUser(token);
   if (!user) {
     return res.status(200).json({ authenticated: false });
   }
@@ -159,7 +172,7 @@ app.get('/auth/session', safe(async (req, res) => {
 app.post('/auth/logout', safe(async (req, res) => {
   const token = req.cookies[COOKIE_NAME];
   if (token) {
-    auth.destroySession(token);
+    await auth.destroySession(token);
   }
   clearSessionCookie(res);
   return res.status(200).json({ ok: true });
@@ -168,13 +181,13 @@ app.post('/auth/logout', safe(async (req, res) => {
 // --- GET /workouts (public catalog — no auth required) ---
 app.get('/workouts', safe(async (req, res) => {
   const category = typeof req.query.category === 'string' ? req.query.category : undefined;
-  const workouts = catalog.listWorkouts(category);
+  const workouts = await catalog.listWorkouts(category);
   return res.status(200).json({ workouts });
 }));
 
 // --- GET /workouts/:id (public — no auth required) ---
 app.get('/workouts/:id', safe(async (req, res) => {
-  const workout = catalog.getWorkoutById(req.params.id);
+  const workout = await catalog.getWorkoutById(req.params.id);
   if (!workout) {
     return res.status(404).json({ error: 'workout not found' });
   }
@@ -190,7 +203,7 @@ app.post('/sessions', requireAuth, safe(async (req, res) => {
   const { workout_id, source, ai_generation_id } = req.body || {};
 
   if (workout_id) {
-    const result = sessions.createCatalogSession(req.user.id, workout_id);
+    const result = await sessions.createCatalogSession(req.user.id, workout_id);
     if (result.error) return res.status(404).json({ error: result.error });
     return res.status(201).json({ session: result.session });
   }
@@ -199,7 +212,7 @@ app.post('/sessions', requireAuth, safe(async (req, res) => {
     if (typeof ai_generation_id !== 'string' || ai_generation_id.length === 0) {
       return res.status(400).json({ error: 'ai_generation_id is required for an ai session' });
     }
-    const result = sessions.createAiSessionFromGeneration(req.user.id, ai_generation_id);
+    const result = await sessions.createAiSessionFromGeneration(req.user.id, ai_generation_id);
     if (result.error) return res.status(404).json({ error: result.error });
     return res.status(201).json({ session: result.session });
   }
@@ -209,13 +222,13 @@ app.post('/sessions', requireAuth, safe(async (req, res) => {
 
 // --- GET /sessions/current ---
 app.get('/sessions/current', requireAuth, safe(async (req, res) => {
-  const current = sessions.getCurrentSession(req.user.id);
+  const current = await sessions.getCurrentSession(req.user.id);
   return res.status(200).json({ session: current });
 }));
 
 // --- POST /sessions/:id/sets ---
 app.post('/sessions/:id/sets', requireAuth, safe(async (req, res) => {
-  const session = sessions.getOwnedSession(req.params.id, req.user.id);
+  const session = await sessions.getOwnedSession(req.params.id, req.user.id);
   if (!session) {
     return res.status(404).json({ error: 'session not found' });
   }
@@ -235,7 +248,7 @@ app.post('/sessions/:id/sets', requireAuth, safe(async (req, res) => {
     return res.status(400).json({ error: 'reps must be > 0 and weight must be >= 0' });
   }
 
-  const result = sessions.logSet(session, {
+  const result = await sessions.logSet(session, {
     exercise_index: exIdx,
     set_index: setIdx,
     reps: repsNum,
@@ -248,26 +261,26 @@ app.post('/sessions/:id/sets', requireAuth, safe(async (req, res) => {
 
 // --- POST /sessions/:id/complete ---
 app.post('/sessions/:id/complete', requireAuth, safe(async (req, res) => {
-  const session = sessions.getOwnedSession(req.params.id, req.user.id);
+  const session = await sessions.getOwnedSession(req.params.id, req.user.id);
   if (!session) {
     return res.status(404).json({ error: 'session not found' });
   }
   if (session.status !== 'in_progress') {
     return res.status(409).json({ error: 'session is already completed' });
   }
-  const result = sessions.completeSession(session);
+  const result = await sessions.completeSession(session);
   return res.status(200).json(result);
 }));
 
 // --- GET /sessions ---
 app.get('/sessions', requireAuth, safe(async (req, res) => {
-  const list = sessions.listSessions(req.user.id, { status: req.query.status, limit: req.query.limit });
+  const list = await sessions.listSessions(req.user.id, { status: req.query.status, limit: req.query.limit });
   return res.status(200).json({ sessions: list });
 }));
 
 // --- GET /progress ---
 app.get('/progress', requireAuth, safe(async (req, res) => {
-  const progress = sessions.getProgress(req.user.id);
+  const progress = await sessions.getProgress(req.user.id);
   return res.status(200).json(progress);
 }));
 
@@ -308,7 +321,7 @@ app.post('/ai/generate-workout', requireAuth, safe(async (req, res) => {
   if (!providerResult.ok) {
     // Record the failure (no secrets, no provider internals) and return
     // a safe, generic error — never the raw provider error or the key.
-    aiGenerations.recordGeneration({ userId: req.user.id, input, output: null, status: 'failed' });
+    await aiGenerations.recordGeneration({ userId: req.user.id, input, output: null, status: 'failed' });
     const messages = {
       missing_api_key: 'AI generation is not configured on this server yet.',
       timeout: 'The AI service took too long to respond. Please try again.',
@@ -319,11 +332,11 @@ app.post('/ai/generate-workout', requireAuth, safe(async (req, res) => {
 
   const validation = aiValidate.validateAndNormalize(providerResult.raw);
   if (!validation.ok) {
-    aiGenerations.recordGeneration({ userId: req.user.id, input, output: null, status: 'failed' });
+    await aiGenerations.recordGeneration({ userId: req.user.id, input, output: null, status: 'failed' });
     return res.status(502).json({ error: 'The AI returned an unusable workout. Please try again.' });
   }
 
-  const generation = aiGenerations.recordGeneration({
+  const generation = await aiGenerations.recordGeneration({
     userId: req.user.id,
     input,
     output: validation.workout,
@@ -335,24 +348,24 @@ app.post('/ai/generate-workout', requireAuth, safe(async (req, res) => {
 
 // --- GET /ai/generations (own history only) ---
 app.get('/ai/generations', requireAuth, safe(async (req, res) => {
-  const list = aiGenerations.listGenerations(req.user.id, req.query.limit);
+  const list = await aiGenerations.listGenerations(req.user.id, req.query.limit);
   return res.status(200).json({ generations: list });
 }));
 
 // --- GET /ai/generations/:id (own only — 404 for anyone else's) ---
 app.get('/ai/generations/:id', requireAuth, safe(async (req, res) => {
-  const generation = aiGenerations.getOwnedGeneration(req.params.id, req.user.id);
+  const generation = await aiGenerations.getOwnedGeneration(req.params.id, req.user.id);
   if (!generation) {
     return res.status(404).json({ error: 'generation not found' });
   }
   return res.status(200).json({ generation });
 }));
 
-// ================= Phase 2.6 — Profile =================
+// ================= Profile =================
 
 // --- GET /profile ---
 app.get('/profile', requireAuth, safe(async (req, res) => {
-  const p = profile.getProfile(req.user.id, req.user.email);
+  const p = await profile.getProfile(req.user.id, req.user.email);
   if (!p) {
     return res.status(404).json({ error: 'profile not found' });
   }
@@ -361,7 +374,7 @@ app.get('/profile', requireAuth, safe(async (req, res) => {
 
 // --- PATCH /profile ---
 app.patch('/profile', requireAuth, safe(async (req, res) => {
-  const result = profile.updateProfile(req.user.id, req.user.email, req.body || {});
+  const result = await profile.updateProfile(req.user.id, req.user.email, req.body || {});
   if (result.error) {
     return res.status(400).json({ error: result.error });
   }
@@ -382,9 +395,16 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`FitAI backend listening on http://localhost:${PORT}`);
-  });
+  db.initSchema()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`FitAI backend listening on http://localhost:${PORT}`);
+      });
+    })
+    .catch((e) => {
+      console.error('[fitai-backend] failed to initialize database:', e.message);
+      process.exit(1);
+    });
 }
 
 module.exports = app;

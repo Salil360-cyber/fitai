@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FitAI — Preferences</title>
+<link rel="stylesheet" href="styles.css">
+<script src="store.js"></script>
+<script src="api-client.js"></script>
+</head>
+<body>
+<div class="screen" style="display: flex; flex-direction: column; padding: 24px 28px 40px;">
+
+  <a href="FitnessLevel.html" id="backBtn" aria-label="Back" class="icon-btn" style="margin-bottom: 20px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F6F7" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+  </a>
+
+  <div class="progress-dots" style="margin-bottom: 24px;">
+    <div class="dot-fill"></div><div class="dot-fill"></div><div class="dot-fill"></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px;">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700;">What do you like to do?</h1>
+    <div style="font-size: 15px; color: var(--text-secondary);">Pick as many as you like — you can change this later.</div>
+  </div>
+
+  <div id="options" style="display: flex; flex-wrap: wrap; gap: 10px; flex-grow: 1; align-content: flex-start;"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 20px;">
+    <a href="Home.html" id="continueBtn" class="btn-primary">Continue</a>
+    <div id="captionText" style="text-align: center; font-size: 14px; color: var(--text-secondary);">Preferences are optional — you can skip this step.</div>
+  </div>
+
+</div>
+<script>
+  var PREFS = [
+    { id: 'strength', label: 'Strength' },
+    { id: 'cardio', label: 'Cardio' },
+    { id: 'mobility', label: 'Mobility' },
+    { id: 'fullbody', label: 'Full Body' },
+    { id: 'outdoor', label: 'Outdoor' }
+  ];
+  var optionsEl = document.getElementById('options');
+  var saved = window.FitAI ? (window.FitAI.get().profile.preferences || {}) : {};
+  var selected = Object.assign({}, saved);
+
+  function render() {
+    optionsEl.innerHTML = '';
+    PREFS.forEach(function (p) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var isSel = !!selected[p.id];
+      btn.className = 'chip' + (isSel ? ' selected' : '');
+      btn.textContent = p.label;
+      btn.addEventListener('click', function () {
+        selected[p.id] = !selected[p.id];
+        if (window.FitAI) window.FitAI.togglePreference(p.id);
+        if (window.FitAIProfile) {
+          var labels = PREFS.filter(function (o) { return selected[o.id]; }).map(function (o) { return o.label; });
+          window.FitAIProfile.updateProfile({ preferences: labels });
+        }
+        render();
+      });
+      optionsEl.appendChild(btn);
+    });
+  }
+  render();
+
+  var fromProfile = window.location.search.indexOf('from=profile') !== -1;
+  if (fromProfile) {
+    document.getElementById('backBtn').href = 'Profile.html';
+    document.getElementById('continueBtn').href = 'Profile.html';
+    document.getElementById('continueBtn').textContent = 'Save';
+    document.getElementById('captionText').textContent = 'Your preferences are saved automatically.';
+  }
+</script>
+</body>
+</html>
