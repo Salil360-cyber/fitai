@@ -129,7 +129,7 @@
     var noteEl = document.getElementById('fallbackNote');
     if (s.generating && !s.loading && s.usedFallback) {
       noteEl.style.display = 'block';
-      noteEl.textContent = s.hadError ? 'AI service unavailable right now — using the offline workout builder instead.' : 'Using the offline workout builder (no AI service configured).';
+      noteEl.textContent = s.hadError ? 'Offline Builder — AI service not connected right now. Try again shortly.' : 'Offline Builder — AI service not connected.';
     } else {
       noteEl.style.display = 'none';
     }

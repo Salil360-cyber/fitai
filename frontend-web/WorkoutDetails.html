@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="styles.css">
 <script src="store.js"></script>
 <script src="api-client.js"></script>
+<script src="exerciseAssets.js"></script>
 </head>
 <body>
 <div class="screen" style="overflow: hidden;">
@@ -22,7 +23,9 @@
     </div>
 
     <div id="content">
-      <div style="width: 100%; height: 180px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text-tertiary); margin-bottom: 20px;">[workout image]</div>
+      <div style="width: 100%; height: 180px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; overflow: hidden;">
+        <img src="assets/workout-card-default.svg" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+      </div>
       <h1 id="title" style="margin: 0 0 6px; font-size: 24px; font-weight: 700;"></h1>
       <div style="display: flex; gap: 10px; margin-bottom: 24px;">
         <div id="durationChip" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
@@ -78,7 +81,8 @@
       var row = document.createElement('div');
       row.className = 'card';
       row.style.cssText += 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;';
-      row.innerHTML = '<div style="font-size:15px;font-weight:600;">' + ex.name + '</div><div style="font-size:13px;color:var(--text-secondary);">' + ex.sets + ' × ' + ex.reps + '</div>';
+      var iconSrc = window.FitAIAssets ? window.FitAIAssets.getExerciseAsset(ex.name) : 'assets/exercises/default.svg';
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><img src="' + iconSrc + '" alt="" style="width:36px;height:36px;border-radius:8px;"><div style="font-size:15px;font-weight:600;">' + ex.name + '</div></div><div style="font-size:13px;color:var(--text-secondary);">' + ex.sets + ' × ' + ex.reps + '</div>';
       list.appendChild(row);
     });
   }

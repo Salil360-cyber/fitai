@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="styles.css">
 <script src="store.js"></script>
 <script src="api-client.js"></script>
+<script src="exerciseAssets.js"></script>
 </head>
 <body>
 <div class="screen" style="overflow: hidden;">
@@ -29,7 +30,7 @@
         <div id="difficultyChip" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
         <div id="categoryChip" style="display:none;font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;"></div>
       </div>
-      <div id="badge" style="margin-bottom: 18px; font-size: 10px; font-weight: 700; border-radius: 999px; padding: 3px 8px; display: inline-block;"></div>
+      <div id="badge" style="margin-bottom: 18px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;"></div>
 
       <div style="display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 20px;">
         <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime);">Why this workout · research validation required</div>
@@ -144,10 +145,10 @@
     if (w.category) { catChip.style.display = 'block'; catChip.textContent = w.category; } else { catChip.style.display = 'none'; }
     var badge = document.getElementById('badge');
     if (w.isLocalFallback) {
-      badge.textContent = 'OFFLINE BUILDER — NOT LIVE AI';
+      badge.textContent = 'Offline Builder — AI service not connected';
       badge.style.cssText += 'color:var(--text-tertiary);background:var(--surface-2);';
     } else {
-      badge.textContent = 'AI-GENERATED';
+      badge.textContent = 'AI-Generated';
       badge.style.cssText += 'color:var(--bg);background:var(--lime);';
     }
     document.getElementById('rationale').textContent = w.rationale;
@@ -157,8 +158,9 @@
       var row = document.createElement('div');
       row.className = 'card';
       row.style.cssText += 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;';
-      var setsLabel = ex.sets + ' × ' + ex.reps + ((ex.rest_sec !== undefined && ex.rest_sec !== null) ? ' · ' + ex.rest_sec + 's rest' : '');
-      row.innerHTML = '<div style="font-size:15px;font-weight:600;">' + ex.name + '</div><div style="font-size:13px;color:var(--text-secondary);">' + setsLabel + '</div>';
+      var setsLabel = ex.sets + ' × ' + ex.reps + (ex.weight ? ' · ' + ex.weight + 'kg' : '') + ((ex.rest_sec !== undefined && ex.rest_sec !== null) ? ' · ' + ex.rest_sec + 's rest' : '');
+      var iconSrc = window.FitAIAssets ? window.FitAIAssets.getExerciseAsset(ex.name) : 'assets/exercises/default.svg';
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><img src="' + iconSrc + '" alt="" style="width:36px;height:36px;border-radius:8px;"><div style="font-size:15px;font-weight:600;">' + ex.name + '</div></div><div style="font-size:13px;color:var(--text-secondary);">' + setsLabel + '</div>';
       list.appendChild(row);
     });
   }

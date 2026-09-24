@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="styles.css">
 <script src="store.js"></script>
 <script src="api-client.js"></script>
+<script src="exerciseAssets.js"></script>
 </head>
 <body>
 <div class="screen" style="overflow: hidden;">
@@ -23,7 +24,9 @@
     <div style="width: 100%; height: 4px; border-radius: 2px; background: var(--border);"></div>
 
     <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 12px;">
-      <div style="width: 100%; height: 180px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text-tertiary);">[exercise illustration]</div>
+      <div style="width: 100%; height: 180px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <img id="exerciseVisual" src="assets/exercises/default.svg" alt="" style="width: 140px; height: 140px;">
+      </div>
       <div id="exerciseName" style="font-size: 24px; font-weight: 700; text-align: center;"></div>
       <div id="setLabel" style="font-size: 14px; color: var(--text-secondary);"></div>
     </div>
@@ -118,6 +121,7 @@
 
     document.getElementById('progressLabel').textContent = 'Exercise ' + (state.exerciseIndex + 1) + ' of ' + exs.length;
     document.getElementById('exerciseName').textContent = currentExercise.name;
+    document.getElementById('exerciseVisual').src = window.FitAIAssets ? window.FitAIAssets.getExerciseAsset(currentExercise.name) : 'assets/exercises/default.svg';
     document.getElementById('setLabel').textContent = 'Set ' + (state.setIndex + 1) + ' of ' + currentExercise.sets;
     if (repsInput.value !== state.reps) repsInput.value = state.reps;
     if (weightInput.value !== state.weight) weightInput.value = state.weight;
